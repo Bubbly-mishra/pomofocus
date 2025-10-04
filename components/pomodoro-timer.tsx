@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -21,7 +21,7 @@ interface Task {
 
 const TIMER_DURATIONS = {
   pomodoro: 25 * 60, // 25 minutes
-  shortBreak: 5 * 60, // 5 minutes
+  shortBreak: 1 * 60, // 5 minutes
   longBreak: 15 * 60, // 15 minutes
 }
 
@@ -37,6 +37,8 @@ export function PomodoroTimer() {
   ])
   const [newTaskTitle, setNewTaskTitle] = useState("")
   const [isAddingTask, setIsAddingTask] = useState(false)
+  const [soundOn, setSoundOn] = useState(true)
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -83,6 +85,23 @@ export function PomodoroTimer() {
     setTasks(tasks.filter((task) => task.id !== taskId))
   }
 
+  const playAlarm = useCallback(() => {
+    if (!soundOn) return
+    const el = audioRef.current
+    try {
+      if (el) {
+        el.currentTime = 0
+        el.volume = 0.9
+        // Attempt play; ignore user-gesture restrictions gracefully
+        void el.play().catch(() => {})
+      }
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        // brief vibration on supported devices
+        navigator.vibrate?.(200)
+      }
+    } catch {}
+  }, [soundOn])
+
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
 
@@ -91,6 +110,7 @@ export function PomodoroTimer() {
         setTimeLeft(timeLeft - 1)
       }, 1000)
     } else if (timeLeft === 0) {
+      playAlarm()
       setIsRunning(false)
       // Auto switch to break mode or back to pomodoro
       if (mode === "pomodoro") {
@@ -103,10 +123,15 @@ export function PomodoroTimer() {
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [isRunning, timeLeft, mode, handleModeChange])
+  }, [isRunning, timeLeft, mode, handleModeChange, playAlarm])
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4">
+      <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
+      <div className="sr-only" aria-live="assertive">
+        {timeLeft === 0 ? "Time is up" : ""}
+      </div>
+
       {/* Header */}
       <header className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-2">
@@ -181,6 +206,18 @@ export function PomodoroTimer() {
           >
             {isRunning ? "PAUSE" : "START"}
           </Button>
+
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+            <Checkbox
+              id="alarm-sound"
+              checked={soundOn}
+              onCheckedChange={() => setSoundOn((v) => !v)}
+              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+            />
+            <label htmlFor="alarm-sound" className="cursor-pointer">
+              Alarm sound
+            </label>
+          </div>
         </Card>
 
         {/* Current Task */}
