@@ -21,7 +21,8 @@ interface Task {
 }
 
 const TIMER_DURATIONS = {
-  pomodoro: 25 * 60, 
+  pomodoro: 1 * 60, // 1 min for testing
+  shortBreak: 5 * 60,
   longBreak: 15 * 60,
 }
 
@@ -37,7 +38,9 @@ export function PomodoroTimer() {
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const fetcher = useCallback((url: string) => fetch(url).then((r) => r.json()), [])
-  const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
+  const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, {
+    fallbackData: [],
+  })
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -45,12 +48,12 @@ export function PomodoroTimer() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  // ✅ Format minutes as pseudo-hours (e.g., 12 → 0.12, 60 → 1.00)
   const formatHours = (mins?: number) => {
     const m = Math.max(0, Math.round(mins ?? 0))
     const hours = Math.floor(m / 60)
-    const minutes = m % 60
-    return `${hours}.${minutes.toString().padStart(2, "0")}h`
+    const minutesPart = m % 60
+    // Display as decimal like 0.12 for 12 minutes
+    return `${(hours + minutesPart / 100).toFixed(2)}h`
   }
 
   const handleModeChange = useCallback((newMode: TimerMode) => {
@@ -117,14 +120,11 @@ export function PomodoroTimer() {
     )
   }
 
-  // ✅ Add timer minutes to remainingMinutes
   const addToRemainingMinutes = useCallback(async () => {
     if (!selectedTaskId) return
-
     const sessionMinutes = Math.round(TIMER_DURATIONS.pomodoro / 60)
     const current = tasks.find((t) => t.id === selectedTaskId)
     if (!current) return
-
     const prevRemaining = current.remainingMinutes ?? 0
     const nextRemaining = prevRemaining + sessionMinutes
 
@@ -261,25 +261,36 @@ export function PomodoroTimer() {
               const target = task.targetMinutes ?? 60
               const remaining = task.remainingMinutes ?? 0
               const isSelected = selectedTaskId === task.id
+
               return (
-                <Card key={task.id} className={`bg-card border-border p-4 ${isSelected ? "ring-2 ring-primary" : ""}`}>
+                <Card
+                  key={task.id}
+                  className={`bg-card border-border p-4 cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}
+                  onClick={() => setSelectedTaskId(task.id)}
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Checkbox
                         checked={task.isCompleted}
-                        onCheckedChange={() => toggleTask(task.id)}
+                        onCheckedChange={(e) => {
+                          e.stopPropagation()
+                          toggleTask(task.id)
+                        }}
                         className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                       />
                       <span className={task.isCompleted ? "line-through opacity-60" : ""}>{task.title}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant="secondary" className="text-muted-foreground">{formatHours(remaining)} / {formatHours(target)}</Badge>
-                      {isSelected ? (
-                        <Badge className="bg-primary text-primary-foreground">Selected</Badge>
-                      ) : (
-                        <Button variant="outline" size="sm" onClick={() => setSelectedTaskId(task.id)}>Use</Button>
-                      )}
-                      <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { if (confirm("Delete this task?")) deleteTask(task.id) }}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:bg-destructive/10"
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          if (confirm("Delete this task?")) deleteTask(task.id)
+                        }}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
