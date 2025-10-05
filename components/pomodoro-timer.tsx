@@ -31,7 +31,6 @@ export function PomodoroTimer() {
   const [isRunning, setIsRunning] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState("")
   const [isAddingTask, setIsAddingTask] = useState(false)
-  const [soundOn, setSoundOn] = useState(true)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [newTaskHours, setNewTaskHours] = useState<number>(1)
   const audioRef = useRef<HTMLAudioElement | null>(null)
@@ -146,18 +145,24 @@ export function PomodoroTimer() {
     )
   }, [selectedTaskId, tasks, mutate])
 
+  // Play alarm 3 times
   const playAlarm = useCallback(() => {
-    if (!soundOn) return
     const el = audioRef.current
-    try {
-      if (el) {
-        el.currentTime = 0
-        el.volume = 0.9
-        void el.play().catch(() => {})
+    if (!el) return
+    let count = 0
+    const playOnce = () => {
+      el.currentTime = 0
+      void el.play().catch(() => {})
+      count++
+      if (count < 3) {
+        el.onended = playOnce
+      } else {
+        el.onended = null
       }
-      navigator.vibrate?.(200)
-    } catch {}
-  }, [soundOn])
+    }
+    playOnce()
+    navigator.vibrate?.(200)
+  }, [])
 
   // Timer interval
   useEffect(() => {
@@ -179,18 +184,10 @@ export function PomodoroTimer() {
     }
   }, [isRunning, timeLeft, mode, handleModeChange, playAlarm, addToRemainingMinutes])
 
-  // Update browser tab title with remaining time
+  // Update browser tab title
   useEffect(() => {
     const formatted = formatTime(timeLeft)
-    if (isRunning) {
-      document.title = `${formatted} - ${mode.charAt(0).toUpperCase() + mode.slice(1)}`
-    } else {
-      document.title = `Pomodoro Timer`
-    }
-
-    return () => {
-      document.title = `Pomodoro Timer`
-    }
+    document.title = isRunning ? `${formatted} - ${mode.charAt(0).toUpperCase() + mode.slice(1)}` : `Pomodoro Timer`
   }, [timeLeft, isRunning, mode])
 
   return (
@@ -213,7 +210,7 @@ export function PomodoroTimer() {
               </Button>
             ))}
           </div>
-          <div className="text-7xl font-bold text-white mb-8 font-mono">{formatTime(timeLeft)}</div>
+          <div className="text-8xl font-bold text-white mb-8 font-mono">{formatTime(timeLeft)}</div>
           <Button
             onClick={toggleTimer}
             size="lg"
@@ -221,15 +218,6 @@ export function PomodoroTimer() {
           >
             {isRunning ? "PAUSE" : "START"}
           </Button>
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-green-200">
-            <Checkbox
-              id="alarm-sound"
-              checked={soundOn}
-              onCheckedChange={() => setSoundOn((v) => !v)}
-              className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-            />
-            <label htmlFor="alarm-sound" className="cursor-pointer">Alarm sound</label>
-          </div>
         </Card>
 
         {/* Tasks */}
