@@ -191,115 +191,129 @@ export function PomodoroTimer() {
   }, [timeLeft, isRunning, mode])
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-950 text-foreground p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-950 text-foreground flex flex-col">
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
-      {/* Timer Card */}
-      <div className="max-w-md mx-auto">
-        <Card className="bg-green-800/90 border border-green-700 p-8 text-center mb-8 rounded-xl shadow-lg">
-          <div className="flex justify-center mb-8 gap-2">
-            {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
-              <Button
-                key={m}
-                variant={mode === m ? "default" : "ghost"}
-                size="sm"
-                onClick={() => handleModeChange(m)}
-                className={mode === m ? "bg-green-500 text-white" : "text-white hover:bg-green-600/80"}
-              >
-                {m.charAt(0).toUpperCase() + m.slice(1)}
-              </Button>
-            ))}
-          </div>
-          <div className="text-8xl font-bold text-white mb-8 font-mono">{formatTime(timeLeft)}</div>
-          <Button
-            onClick={toggleTimer}
-            size="lg"
-            className="bg-green-500 text-white hover:bg-green-600 px-12 py-3 text-lg font-semibold rounded-lg"
-          >
-            {isRunning ? "PAUSE" : "START"}
-          </Button>
-        </Card>
+      {/* Header */}
+      <header className="bg-green-800/90 p-4 text-center text-white text-1xl font-bold rounded-b-lg shadow-md mb-4">
+        Pomodoro Timer
+      </header>
 
-        {/* Tasks */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-white text-lg font-semibold">Tasks</h2>
-            <Button size="sm" onClick={() => setIsAddingTask(true)} className="bg-green-500 text-white hover:bg-green-600">
-              <Plus className="w-4 h-4 mr-2" /> Add Task
-            </Button>
-          </div>
-
-          {isAddingTask && (
-            <Card className="bg-green-800/90 border border-green-700 p-4 rounded-lg">
-              <div className="flex flex-col md:flex-row md:items-center gap-3">
-                <Input
-                  value={newTaskTitle}
-                  onChange={(e) => setNewTaskTitle(e.target.value)}
-                  placeholder="What are you working on?"
-                  className="flex-1"
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") addTask()
-                    if (e.key === "Escape") setIsAddingTask(false)
-                  }}
-                  autoFocus
-                />
-                <Input
-                  type="number"
-                  min={0.25}
-                  step={0.25}
-                  value={newTaskHours}
-                  onChange={(e) => setNewTaskHours(Number(e.target.value))}
-                  className="w-28"
-                />
-                <Button onClick={addTask} size="sm">Add</Button>
-                <Button onClick={() => setIsAddingTask(false)} variant="ghost" size="sm"><X className="w-4 h-4" /></Button>
-              </div>
-            </Card>
-          )}
-
-          <div className="space-y-2">
-            {tasks.map((task) => {
-              const target = task.targetMinutes ?? 60
-              const remaining = task.remainingMinutes ?? 0
-              const isSelected = selectedTaskId === task.id
-
-              return (
-                <Card
-                  key={task.id}
-                  className={`bg-green-900/80 border border-green-700 p-4 cursor-pointer rounded-lg ${isSelected ? "ring-2 ring-green-500" : ""}`}
-                  onClick={() => setSelectedTaskId(task.id)}
+      {/* Main content */}
+      <main className="flex-1 w-full flex flex-col items-center px-4">
+        {/* Timer Card and Tasks */}
+        <div className="max-w-md w-full">
+          {/* ...existing timer and task cards remain unchanged... */}
+          <Card className="bg-green-800/90 border border-green-700 p-8 text-center mb-8 rounded-xl shadow-lg">
+            <div className="flex justify-center mb-8 gap-2">
+              {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
+                <Button
+                  key={m}
+                  variant={mode === m ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => handleModeChange(m)}
+                  className={mode === m ? "bg-green-500 text-white" : "text-white hover:bg-green-600/80"}
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={task.isCompleted}
-                        onClick={(e) => e.stopPropagation()}
-                        onCheckedChange={() => toggleTask(task.id)}
-                        className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
-                      />
-                      <span className={task.isCompleted ? "line-through opacity-60 text-green-200" : "text-white"}>{task.title}</span>
+                  {m.charAt(0).toUpperCase() + m.slice(1)}
+                </Button>
+              ))}
+            </div>
+            <div className="text-9xl font-bold text-white mb-8 font-mono">{formatTime(timeLeft)}</div>
+            <Button
+              onClick={toggleTimer}
+              size="lg"
+              className="bg-green-500 text-white hover:bg-green-600 px-12 py-3 text-lg font-semibold rounded-lg"
+            >
+              {isRunning ? "PAUSE" : "START"}
+            </Button>
+          </Card>
+
+          {/* Tasks section stays as-is */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-white text-lg font-semibold">Tasks</h2>
+              <Button size="sm" onClick={() => setIsAddingTask(true)} className="bg-green-500 text-white hover:bg-green-600">
+                <Plus className="w-4 h-4 mr-2" /> Add Task
+              </Button>
+            </div>
+
+            {isAddingTask && (
+              <Card className="bg-green-800/90 border border-green-700 p-4 rounded-lg">
+                <div className="flex flex-col md:flex-row md:items-center gap-3">
+                  <Input
+                    value={newTaskTitle}
+                    onChange={(e) => setNewTaskTitle(e.target.value)}
+                    placeholder="What are you working on?"
+                    className="flex-1"
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") addTask()
+                      if (e.key === "Escape") setIsAddingTask(false)
+                    }}
+                    autoFocus
+                  />
+                  <Input
+                    type="number"
+                    min={0.25}
+                    step={0.25}
+                    value={newTaskHours}
+                    onChange={(e) => setNewTaskHours(Number(e.target.value))}
+                    className="w-28"
+                  />
+                  <Button onClick={addTask} size="sm">Add</Button>
+                  <Button onClick={() => setIsAddingTask(false)} variant="ghost" size="sm"><X className="w-4 h-4" /></Button>
+                </div>
+              </Card>
+            )}
+
+            <div className="space-y-2">
+              {tasks.map((task) => {
+                const target = task.targetMinutes ?? 60
+                const remaining = task.remainingMinutes ?? 0
+                const isSelected = selectedTaskId === task.id
+
+                return (
+                  <Card
+                    key={task.id}
+                    className={`bg-green-900/80 border border-green-700 p-4 cursor-pointer rounded-lg ${isSelected ? "ring-2 ring-green-500" : ""}`}
+                    onClick={() => setSelectedTaskId(task.id)}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Checkbox
+                          checked={task.isCompleted}
+                          onClick={(e) => e.stopPropagation()}
+                          onCheckedChange={() => toggleTask(task.id)}
+                          className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                        />
+                        <span className={task.isCompleted ? "line-through opacity-60 text-green-200" : "text-white"}>{task.title}</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-green-200">{formatHours(remaining)} / {formatHours(target)}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-red-400 hover:bg-red-500/20"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            if (confirm("Delete this task?")) deleteTask(task.id)
+                          }}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-green-200">{formatHours(remaining)} / {formatHours(target)}</Badge>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-400 hover:bg-red-500/20"
-                        onClick={(e) => {
-                          e.stopPropagation()
-                          if (confirm("Delete this task?")) deleteTask(task.id)
-                        }}
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </Card>
-              )
-            })}
+                  </Card>
+                )
+              })}
+            </div>
           </div>
         </div>
-      </div>
+      </main>
+
+      {/* Footer */}
+      <footer className="bg-green-800/90 text-white text-center p-3 mt-3 rounded-t-lg shadow-inner">
+        Made with ❤️ for Doyel
+      </footer>
     </div>
   )
 }
