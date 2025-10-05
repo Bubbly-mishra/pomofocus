@@ -6,8 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { MoreHorizontal, Settings, BarChart3, Plus, X, Trash2 } from "lucide-react"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Plus, X, Trash2 } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -21,7 +20,7 @@ interface Task {
 }
 
 const TIMER_DURATIONS = {
-  pomodoro: 1 * 60, // 1 min for testing
+  pomodoro: 25 * 60, // default 25 min
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 }
@@ -52,7 +51,6 @@ export function PomodoroTimer() {
     const m = Math.max(0, Math.round(mins ?? 0))
     const hours = Math.floor(m / 60)
     const minutesPart = m % 60
-    // Display as decimal like 0.12 for 12 minutes
     return `${(hours + minutesPart / 100).toFixed(2)}h`
   }
 
@@ -161,6 +159,7 @@ export function PomodoroTimer() {
     } catch {}
   }, [soundOn])
 
+  // Timer interval
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
     if (isRunning && timeLeft > 0) {
@@ -180,40 +179,54 @@ export function PomodoroTimer() {
     }
   }, [isRunning, timeLeft, mode, handleModeChange, playAlarm, addToRemainingMinutes])
 
+  // Update browser tab title with remaining time
+  useEffect(() => {
+    const formatted = formatTime(timeLeft)
+    if (isRunning) {
+      document.title = `${formatted} - ${mode.charAt(0).toUpperCase() + mode.slice(1)}`
+    } else {
+      document.title = `Pomodoro Timer`
+    }
+
+    return () => {
+      document.title = `Pomodoro Timer`
+    }
+  }, [timeLeft, isRunning, mode])
+
   return (
-    <div className="min-h-screen bg-background text-foreground p-4">
+    <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-950 text-foreground p-4">
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
       {/* Timer Card */}
       <div className="max-w-md mx-auto">
-        <Card className="bg-card border-border p-8 text-center mb-8">
-          <div className="flex justify-center mb-8">
+        <Card className="bg-green-800/90 border border-green-700 p-8 text-center mb-8 rounded-xl shadow-lg">
+          <div className="flex justify-center mb-8 gap-2">
             {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
               <Button
                 key={m}
                 variant={mode === m ? "default" : "ghost"}
                 size="sm"
                 onClick={() => handleModeChange(m)}
-                className={mode === m ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"}
+                className={mode === m ? "bg-green-500 text-white" : "text-white hover:bg-green-600/80"}
               >
                 {m.charAt(0).toUpperCase() + m.slice(1)}
               </Button>
             ))}
           </div>
-          <div className="text-8xl font-bold text-foreground mb-8 font-mono">{formatTime(timeLeft)}</div>
+          <div className="text-7xl font-bold text-white mb-8 font-mono">{formatTime(timeLeft)}</div>
           <Button
             onClick={toggleTimer}
             size="lg"
-            className="bg-primary text-primary-foreground hover:bg-primary/90 px-12 py-3 text-lg font-semibold"
+            className="bg-green-500 text-white hover:bg-green-600 px-12 py-3 text-lg font-semibold rounded-lg"
           >
             {isRunning ? "PAUSE" : "START"}
           </Button>
-          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
+          <div className="mt-4 flex items-center justify-center gap-2 text-sm text-green-200">
             <Checkbox
               id="alarm-sound"
               checked={soundOn}
               onCheckedChange={() => setSoundOn((v) => !v)}
-              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
             />
             <label htmlFor="alarm-sound" className="cursor-pointer">Alarm sound</label>
           </div>
@@ -222,14 +235,14 @@ export function PomodoroTimer() {
         {/* Tasks */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-foreground text-lg font-semibold">Tasks</h2>
-            <Button size="sm" onClick={() => setIsAddingTask(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+            <h2 className="text-white text-lg font-semibold">Tasks</h2>
+            <Button size="sm" onClick={() => setIsAddingTask(true)} className="bg-green-500 text-white hover:bg-green-600">
               <Plus className="w-4 h-4 mr-2" /> Add Task
             </Button>
           </div>
 
           {isAddingTask && (
-            <Card className="bg-card border-border p-4">
+            <Card className="bg-green-800/90 border border-green-700 p-4 rounded-lg">
               <div className="flex flex-col md:flex-row md:items-center gap-3">
                 <Input
                   value={newTaskTitle}
@@ -265,7 +278,7 @@ export function PomodoroTimer() {
               return (
                 <Card
                   key={task.id}
-                  className={`bg-card border-border p-4 cursor-pointer ${isSelected ? "ring-2 ring-primary" : ""}`}
+                  className={`bg-green-900/80 border border-green-700 p-4 cursor-pointer rounded-lg ${isSelected ? "ring-2 ring-green-500" : ""}`}
                   onClick={() => setSelectedTaskId(task.id)}
                 >
                   <div className="flex items-center justify-between">
@@ -276,16 +289,16 @@ export function PomodoroTimer() {
                           e.stopPropagation()
                           toggleTask(task.id)
                         }}
-                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />
-                      <span className={task.isCompleted ? "line-through opacity-60" : ""}>{task.title}</span>
+                      <span className={task.isCompleted ? "line-through opacity-60 text-green-200" : "text-white"}>{task.title}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Badge variant="secondary" className="text-muted-foreground">{formatHours(remaining)} / {formatHours(target)}</Badge>
+                      <Badge variant="secondary" className="text-green-200">{formatHours(remaining)} / {formatHours(target)}</Badge>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="text-destructive hover:bg-destructive/10"
+                        className="text-red-400 hover:bg-red-500/20"
                         onClick={(e) => {
                           e.stopPropagation()
                           if (confirm("Delete this task?")) deleteTask(task.id)
