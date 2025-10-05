@@ -20,7 +20,7 @@ interface Task {
 }
 
 const TIMER_DURATIONS = {
-  pomodoro: 25 * 60, // default 25 min
+  pomodoro: 25 * 60,
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 }
@@ -285,10 +285,8 @@ export function PomodoroTimer() {
                     <div className="flex items-center gap-3">
                       <Checkbox
                         checked={task.isCompleted}
-                        onCheckedChange={(e) => {
-                          e.stopPropagation()
-                          toggleTask(task.id)
-                        }}
+                        onClick={(e) => e.stopPropagation()}
+                        onCheckedChange={() => toggleTask(task.id)}
                         className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
                       />
                       <span className={task.isCompleted ? "line-through opacity-60 text-green-200" : "text-white"}>{task.title}</span>
