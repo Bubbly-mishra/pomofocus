@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { MoreHorizontal, Settings, BarChart3, Plus, X } from "lucide-react"
+import { MoreHorizontal, Settings, BarChart3, Plus, X, Trash2 } from "lucide-react"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
 
@@ -21,7 +22,7 @@ interface Task {
 
 const TIMER_DURATIONS = {
   pomodoro: 25 * 60, // 25 minutes
-  shortBreak: 1 * 60, // 5 minutes
+  shortBreak: 5 * 60, // 5 minutes
   longBreak: 15 * 60, // 15 minutes
 }
 
@@ -31,14 +32,15 @@ export function PomodoroTimer() {
   const [isRunning, setIsRunning] = useState(false)
   const [currentTask, setCurrentTask] = useState("#1")
   const [currentTaskTitle, setCurrentTaskTitle] = useState("Write Everything")
-  const [tasks, setTasks] = useState<Task[]>([
-    { id: "1", title: "Test Dowjones", completed: 0, total: 1, isCompleted: false },
-    { id: "2", title: "Email Finish", completed: 7, total: 7, isCompleted: true },
-  ])
   const [newTaskTitle, setNewTaskTitle] = useState("")
   const [isAddingTask, setIsAddingTask] = useState(false)
   const [soundOn, setSoundOn] = useState(true)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+
+  const fetcher = useCallback((url: string) => fetch(url).then((r) => r.json()), [])
+  const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, {
+    fallbackData: [],
+  })
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -56,33 +58,62 @@ export function PomodoroTimer() {
     setIsRunning(!isRunning)
   }
 
-  const toggleTask = (taskId: string) => {
-    setTasks(
-      tasks.map((task) =>
-        task.id === taskId
-          ? { ...task, isCompleted: !task.isCompleted, completed: task.isCompleted ? 0 : task.total }
-          : task,
-      ),
+  const toggleTask = async (taskId: string) => {
+    const current = tasks.find((t) => t.id === taskId)
+    if (!current) return
+    const next: Task = {
+      ...current,
+      isCompleted: !current.isCompleted,
+      completed: !current.isCompleted ? current.total : 0,
+    }
+    await mutate(
+      async () => {
+        await fetch(`/api/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ isCompleted: next.isCompleted, completed: next.completed }),
+        })
+        return tasks.map((t) => (t.id === taskId ? next : t))
+      },
+      { optimisticData: tasks.map((t) => (t.id === taskId ? next : t)), revalidate: true },
     )
   }
 
-  const addTask = () => {
-    if (newTaskTitle.trim()) {
-      const newTask: Task = {
-        id: Date.now().toString(),
-        title: newTaskTitle.trim(),
-        completed: 0,
-        total: 1,
-        isCompleted: false,
-      }
-      setTasks([...tasks, newTask])
-      setNewTaskTitle("")
-      setIsAddingTask(false)
+  const addTask = async () => {
+    if (!newTaskTitle.trim()) return
+    const optimistic: Task = {
+      id: `temp-${Date.now()}`,
+      title: newTaskTitle.trim(),
+      completed: 0,
+      total: 1,
+      isCompleted: false,
     }
+    setNewTaskTitle("")
+    setIsAddingTask(false)
+
+    await mutate(
+      async () => {
+        const res = await fetch("/api/tasks", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ title: optimistic.title }),
+        })
+        const created: Task = await res.json()
+        return [...tasks.filter((t) => !t.id.startsWith("temp-")), created]
+      },
+      { optimisticData: [...tasks, optimistic], revalidate: true },
+    )
   }
 
-  const deleteTask = (taskId: string) => {
-    setTasks(tasks.filter((task) => task.id !== taskId))
+  const deleteTask = async (taskId: string) => {
+    const next = tasks.filter((t) => t.id !== taskId)
+    await mutate(
+      async () => {
+        await fetch(`/api/tasks/${taskId}`, { method: "DELETE" })
+        return next
+      },
+      { optimisticData: next, revalidate: true },
+    )
   }
 
   const playAlarm = useCallback(() => {
@@ -123,7 +154,7 @@ export function PomodoroTimer() {
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [isRunning, timeLeft, mode, handleModeChange, playAlarm])
+  }, [isRunning, timeLeft, mode, handleModeChange])
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4">
@@ -230,19 +261,30 @@ export function PomodoroTimer() {
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-foreground text-lg font-semibold">Tasks</h2>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm">
-                  <MoreHorizontal className="w-4 h-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent>
-                <DropdownMenuItem onClick={() => setIsAddingTask(true)}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Add Task
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                onClick={() => setIsAddingTask(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add Task
+              </Button>
+              {/* keep the dropdown for future options */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="sm">
+                    <MoreHorizontal className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  <DropdownMenuItem onClick={() => setIsAddingTask(true)}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Task
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           <hr className="border-border" />
@@ -273,6 +315,20 @@ export function PomodoroTimer() {
           )}
 
           {/* Task List */}
+          {tasks.length === 0 && !isAddingTask ? (
+            <Card className="bg-card border-border p-6 flex items-center justify-between">
+              <div className="text-muted-foreground">No tasks yet.</div>
+              <Button
+                size="sm"
+                onClick={() => setIsAddingTask(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Plus className="w-4 h-4 mr-2" />
+                Add your first task
+              </Button>
+            </Card>
+          ) : null}
+
           <div className="space-y-2">
             {tasks.map((task) => (
               <Card key={task.id} className="bg-card border-border p-4">
@@ -291,6 +347,18 @@ export function PomodoroTimer() {
                     <Badge variant="secondary" className="text-muted-foreground">
                       {task.completed}/{task.total}
                     </Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-destructive hover:bg-destructive/10"
+                      aria-label={`Delete ${task.title}`}
+                      onClick={() => {
+                        if (confirm("Delete this task?")) deleteTask(task.id)
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span className="sr-only">Delete task</span>
+                    </Button>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="sm">
