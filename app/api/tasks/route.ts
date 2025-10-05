@@ -5,10 +5,10 @@ function toClient(doc: any) {
   return {
     id: doc._id.toString(),
     title: doc.title,
-    completed: doc.completed ?? 0,
-    total: doc.total ?? 1,
     isCompleted: doc.isCompleted ?? false,
     createdAt: doc.createdAt ?? new Date(),
+    targetMinutes: doc.targetMinutes ?? 60,
+    remainingMinutes: doc.remainingMinutes ?? doc.targetMinutes ?? 60,
   }
 }
 
@@ -23,14 +23,18 @@ export async function POST(req: Request) {
   const title = String(body?.title || "").trim()
   if (!title) return NextResponse.json({ error: "Title is required" }, { status: 400 })
 
+  const rawHours = Number(body?.targetHours)
+  const targetMinutes = Number.isFinite(rawHours) ? Math.max(0, Math.round(rawHours * 60)) : 60
+
   const db = await getDb()
   const doc = {
     title,
-    completed: 0,
-    total: 1,
     isCompleted: false,
     createdAt: new Date(),
+    targetMinutes,
+    remainingMinutes: 0,
   }
+
   const res = await db.collection("tasks").insertOne(doc)
   return NextResponse.json(toClient({ _id: res.insertedId, ...doc }), { status: 201 })
 }

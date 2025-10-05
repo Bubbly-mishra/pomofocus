@@ -14,12 +14,22 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
   const _id = new ObjectId(params.id)
   const body = await req.json().catch(() => ({}))
 
-  // Allow generic updates but constrain to our fields
   const update: any = {}
+
   if (typeof body.isCompleted === "boolean") update.isCompleted = body.isCompleted
-  if (typeof body.completed === "number") update.completed = body.completed
-  if (typeof body.total === "number") update.total = body.total
   if (typeof body.title === "string") update.title = body.title
+  if (typeof body.targetMinutes === "number")
+    update.targetMinutes = Math.max(0, Math.round(body.targetMinutes))
+
+  if (typeof body.remainingMinutes === "number") {
+    const doc = await db.collection("tasks").findOne({ _id })
+    if (doc) {
+      const prev = doc.remainingMinutes ?? doc.targetMinutes ?? 60
+      update.remainingMinutes = body.increment
+        ? prev + Math.round(body.remainingMinutes)
+        : Math.max(0, Math.round(body.remainingMinutes))
+    }
+  }
 
   if (!Object.keys(update).length) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 })
@@ -27,12 +37,13 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
 
   await db.collection("tasks").updateOne({ _id }, { $set: update })
   const doc = await db.collection("tasks").findOne({ _id })
+
   return NextResponse.json({
     id: doc!._id.toString(),
     title: doc!.title,
-    completed: doc!.completed ?? 0,
-    total: doc!.total ?? 1,
     isCompleted: doc!.isCompleted ?? false,
     createdAt: doc!.createdAt ?? new Date(),
+    targetMinutes: doc!.targetMinutes ?? 60,
+    remainingMinutes: doc!.remainingMinutes ?? doc!.targetMinutes ?? 60,
   })
 }

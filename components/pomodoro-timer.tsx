@@ -15,37 +15,42 @@ type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
 interface Task {
   id: string
   title: string
-  completed: number
-  total: number
   isCompleted: boolean
+  targetMinutes?: number
+  remainingMinutes?: number
 }
 
 const TIMER_DURATIONS = {
-  pomodoro: 25 * 60, // 25 minutes
-  shortBreak: 5 * 60, // 5 minutes
-  longBreak: 15 * 60, // 15 minutes
+  pomodoro: 25 * 60, 
+  longBreak: 15 * 60,
 }
 
 export function PomodoroTimer() {
   const [mode, setMode] = useState<TimerMode>("pomodoro")
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS.pomodoro)
   const [isRunning, setIsRunning] = useState(false)
-  const [currentTask, setCurrentTask] = useState("#1")
-  const [currentTaskTitle, setCurrentTaskTitle] = useState("Write Everything")
   const [newTaskTitle, setNewTaskTitle] = useState("")
   const [isAddingTask, setIsAddingTask] = useState(false)
   const [soundOn, setSoundOn] = useState(true)
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
+  const [newTaskHours, setNewTaskHours] = useState<number>(1)
   const audioRef = useRef<HTMLAudioElement | null>(null)
 
   const fetcher = useCallback((url: string) => fetch(url).then((r) => r.json()), [])
-  const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, {
-    fallbackData: [],
-  })
+  const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
     const secs = seconds % 60
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
+  }
+
+  // ✅ Format minutes as pseudo-hours (e.g., 12 → 0.12, 60 → 1.00)
+  const formatHours = (mins?: number) => {
+    const m = Math.max(0, Math.round(mins ?? 0))
+    const hours = Math.floor(m / 60)
+    const minutes = m % 60
+    return `${hours}.${minutes.toString().padStart(2, "0")}h`
   }
 
   const handleModeChange = useCallback((newMode: TimerMode) => {
@@ -54,24 +59,18 @@ export function PomodoroTimer() {
     setIsRunning(false)
   }, [])
 
-  const toggleTimer = () => {
-    setIsRunning(!isRunning)
-  }
+  const toggleTimer = () => setIsRunning(!isRunning)
 
   const toggleTask = async (taskId: string) => {
     const current = tasks.find((t) => t.id === taskId)
     if (!current) return
-    const next: Task = {
-      ...current,
-      isCompleted: !current.isCompleted,
-      completed: !current.isCompleted ? current.total : 0,
-    }
+    const next: Task = { ...current, isCompleted: !current.isCompleted }
     await mutate(
       async () => {
         await fetch(`/api/tasks/${taskId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ isCompleted: next.isCompleted, completed: next.completed }),
+          body: JSON.stringify({ isCompleted: next.isCompleted }),
         })
         return tasks.map((t) => (t.id === taskId ? next : t))
       },
@@ -81,14 +80,16 @@ export function PomodoroTimer() {
 
   const addTask = async () => {
     if (!newTaskTitle.trim()) return
+    const targetMins = Math.max(0, Math.round((Number(newTaskHours) || 1) * 60))
     const optimistic: Task = {
       id: `temp-${Date.now()}`,
       title: newTaskTitle.trim(),
-      completed: 0,
-      total: 1,
       isCompleted: false,
+      targetMinutes: targetMins,
+      remainingMinutes: 0,
     }
     setNewTaskTitle("")
+    setNewTaskHours(1)
     setIsAddingTask(false)
 
     await mutate(
@@ -96,7 +97,7 @@ export function PomodoroTimer() {
         const res = await fetch("/api/tasks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: optimistic.title }),
+          body: JSON.stringify({ title: optimistic.title, targetHours: newTaskHours }),
         })
         const created: Task = await res.json()
         return [...tasks.filter((t) => !t.id.startsWith("temp-")), created]
@@ -116,6 +117,37 @@ export function PomodoroTimer() {
     )
   }
 
+  // ✅ Add timer minutes to remainingMinutes
+  const addToRemainingMinutes = useCallback(async () => {
+    if (!selectedTaskId) return
+
+    const sessionMinutes = Math.round(TIMER_DURATIONS.pomodoro / 60)
+    const current = tasks.find((t) => t.id === selectedTaskId)
+    if (!current) return
+
+    const prevRemaining = current.remainingMinutes ?? 0
+    const nextRemaining = prevRemaining + sessionMinutes
+
+    await mutate(
+      async () => {
+        await fetch(`/api/tasks/${selectedTaskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ remainingMinutes: nextRemaining }),
+        })
+        return tasks.map((t) =>
+          t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t
+        )
+      },
+      {
+        optimisticData: tasks.map((t) =>
+          t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t
+        ),
+        revalidate: true,
+      }
+    )
+  }, [selectedTaskId, tasks, mutate])
+
   const playAlarm = useCallback(() => {
     if (!soundOn) return
     const el = audioRef.current
@@ -123,113 +155,52 @@ export function PomodoroTimer() {
       if (el) {
         el.currentTime = 0
         el.volume = 0.9
-        // Attempt play; ignore user-gesture restrictions gracefully
         void el.play().catch(() => {})
       }
-      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
-        // brief vibration on supported devices
-        navigator.vibrate?.(200)
-      }
+      navigator.vibrate?.(200)
     } catch {}
   }, [soundOn])
 
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
-
     if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => {
-        setTimeLeft(timeLeft - 1)
-      }, 1000)
+      interval = setInterval(() => setTimeLeft((prev) => prev - 1), 1000)
     } else if (timeLeft === 0) {
       playAlarm()
       setIsRunning(false)
-      // Auto switch to break mode or back to pomodoro
       if (mode === "pomodoro") {
+        void addToRemainingMinutes()
         handleModeChange("shortBreak")
       } else {
         handleModeChange("pomodoro")
       }
     }
-
     return () => {
       if (interval) clearInterval(interval)
     }
-  }, [isRunning, timeLeft, mode, handleModeChange])
+  }, [isRunning, timeLeft, mode, handleModeChange, playAlarm, addToRemainingMinutes])
 
   return (
     <div className="min-h-screen bg-background text-foreground p-4">
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
-      <div className="sr-only" aria-live="assertive">
-        {timeLeft === 0 ? "Time is up" : ""}
-      </div>
 
-      {/* Header */}
-      <header className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center">
-            <div className="w-4 h-4 bg-primary-foreground rounded-full" />
-          </div>
-          <h1 className="text-xl font-semibold text-foreground">Pomofocus</h1>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent">
-            <BarChart3 className="w-4 h-4 mr-2" />
-            Report
-          </Button>
-          <Button variant="ghost" size="sm" className="text-foreground hover:bg-accent">
-            <Settings className="w-4 h-4 mr-2" />
-            Setting
-          </Button>
-          <div className="w-8 h-8 bg-accent rounded-full overflow-hidden">
-            <img src="/diverse-user-avatars.png" alt="User avatar" className="w-full h-full object-cover" />
-          </div>
-        </div>
-      </header>
-
-      {/* Main Timer Card */}
+      {/* Timer Card */}
       <div className="max-w-md mx-auto">
         <Card className="bg-card border-border p-8 text-center mb-8">
-          {/* Timer Mode Tabs */}
           <div className="flex justify-center mb-8">
-            <div className="flex bg-accent/50 rounded-lg p-1">
+            {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
               <Button
-                variant={mode === "pomodoro" ? "default" : "ghost"}
+                key={m}
+                variant={mode === m ? "default" : "ghost"}
                 size="sm"
-                onClick={() => handleModeChange("pomodoro")}
-                className={
-                  mode === "pomodoro" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
-                }
+                onClick={() => handleModeChange(m)}
+                className={mode === m ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"}
               >
-                Pomodoro
+                {m.charAt(0).toUpperCase() + m.slice(1)}
               </Button>
-              <Button
-                variant={mode === "shortBreak" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => handleModeChange("shortBreak")}
-                className={
-                  mode === "shortBreak" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
-                }
-              >
-                Short Break
-              </Button>
-              <Button
-                variant={mode === "longBreak" ? "default" : "ghost"}
-                size="sm"
-                onClick={() => handleModeChange("longBreak")}
-                className={
-                  mode === "longBreak" ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-accent"
-                }
-              >
-                Long Break
-              </Button>
-            </div>
+            ))}
           </div>
-
-          {/* Timer Display */}
           <div className="text-8xl font-bold text-foreground mb-8 font-mono">{formatTime(timeLeft)}</div>
-
-          {/* Start/Pause Button */}
           <Button
             onClick={toggleTimer}
             size="lg"
@@ -237,7 +208,6 @@ export function PomodoroTimer() {
           >
             {isRunning ? "PAUSE" : "START"}
           </Button>
-
           <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
             <Checkbox
               id="alarm-sound"
@@ -245,54 +215,22 @@ export function PomodoroTimer() {
               onCheckedChange={() => setSoundOn((v) => !v)}
               className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
             />
-            <label htmlFor="alarm-sound" className="cursor-pointer">
-              Alarm sound
-            </label>
+            <label htmlFor="alarm-sound" className="cursor-pointer">Alarm sound</label>
           </div>
         </Card>
 
-        {/* Current Task */}
-        <div className="text-center mb-6">
-          <div className="text-muted-foreground text-sm mb-1">{currentTask}</div>
-          <div className="text-foreground text-lg">{currentTaskTitle}</div>
-        </div>
-
-        {/* Tasks Section */}
+        {/* Tasks */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-foreground text-lg font-semibold">Tasks</h2>
-            <div className="flex items-center gap-2">
-              <Button
-                size="sm"
-                onClick={() => setIsAddingTask(true)}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add Task
-              </Button>
-              {/* keep the dropdown for future options */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" size="sm">
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuItem onClick={() => setIsAddingTask(true)}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Add Task
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
+            <Button size="sm" onClick={() => setIsAddingTask(true)} className="bg-primary text-primary-foreground hover:bg-primary/90">
+              <Plus className="w-4 h-4 mr-2" /> Add Task
+            </Button>
           </div>
 
-          <hr className="border-border" />
-
-          {/* Add Task Input */}
           {isAddingTask && (
             <Card className="bg-card border-border p-4">
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col md:flex-row md:items-center gap-3">
                 <Input
                   value={newTaskTitle}
                   onChange={(e) => setNewTaskTitle(e.target.value)}
@@ -304,75 +242,51 @@ export function PomodoroTimer() {
                   }}
                   autoFocus
                 />
-                <Button onClick={addTask} size="sm">
-                  Add
-                </Button>
-                <Button onClick={() => setIsAddingTask(false)} variant="ghost" size="sm">
-                  <X className="w-4 h-4" />
-                </Button>
+                <Input
+                  type="number"
+                  min={0.25}
+                  step={0.25}
+                  value={newTaskHours}
+                  onChange={(e) => setNewTaskHours(Number(e.target.value))}
+                  className="w-28"
+                />
+                <Button onClick={addTask} size="sm">Add</Button>
+                <Button onClick={() => setIsAddingTask(false)} variant="ghost" size="sm"><X className="w-4 h-4" /></Button>
               </div>
             </Card>
           )}
 
-          {/* Task List */}
-          {tasks.length === 0 && !isAddingTask ? (
-            <Card className="bg-card border-border p-6 flex items-center justify-between">
-              <div className="text-muted-foreground">No tasks yet.</div>
-              <Button
-                size="sm"
-                onClick={() => setIsAddingTask(true)}
-                className="bg-primary text-primary-foreground hover:bg-primary/90"
-              >
-                <Plus className="w-4 h-4 mr-2" />
-                Add your first task
-              </Button>
-            </Card>
-          ) : null}
-
           <div className="space-y-2">
-            {tasks.map((task) => (
-              <Card key={task.id} className="bg-card border-border p-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Checkbox
-                      checked={task.isCompleted}
-                      onCheckedChange={() => toggleTask(task.id)}
-                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
-                    />
-                    <span className={`text-foreground ${task.isCompleted ? "line-through opacity-60" : ""}`}>
-                      {task.title}
-                    </span>
+            {tasks.map((task) => {
+              const target = task.targetMinutes ?? 60
+              const remaining = task.remainingMinutes ?? 0
+              const isSelected = selectedTaskId === task.id
+              return (
+                <Card key={task.id} className={`bg-card border-border p-4 ${isSelected ? "ring-2 ring-primary" : ""}`}>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Checkbox
+                        checked={task.isCompleted}
+                        onCheckedChange={() => toggleTask(task.id)}
+                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      />
+                      <span className={task.isCompleted ? "line-through opacity-60" : ""}>{task.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="secondary" className="text-muted-foreground">{formatHours(remaining)} / {formatHours(target)}</Badge>
+                      {isSelected ? (
+                        <Badge className="bg-primary text-primary-foreground">Selected</Badge>
+                      ) : (
+                        <Button variant="outline" size="sm" onClick={() => setSelectedTaskId(task.id)}>Use</Button>
+                      )}
+                      <Button variant="ghost" size="sm" className="text-destructive hover:bg-destructive/10" onClick={() => { if (confirm("Delete this task?")) deleteTask(task.id) }}>
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-muted-foreground">
-                      {task.completed}/{task.total}
-                    </Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive hover:bg-destructive/10"
-                      aria-label={`Delete ${task.title}`}
-                      onClick={() => {
-                        if (confirm("Delete this task?")) deleteTask(task.id)
-                      }}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span className="sr-only">Delete task</span>
-                    </Button>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm">
-                          <MoreHorizontal className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuItem onClick={() => deleteTask(task.id)}>Delete</DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              )
+            })}
           </div>
         </div>
       </div>
