@@ -10,6 +10,7 @@ import { Plus, X, Trash2 } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
+type Priority = "low" | "medium" | "high"
 
 interface Task {
   id: string
@@ -17,12 +18,20 @@ interface Task {
   isCompleted: boolean
   targetMinutes?: number
   remainingMinutes?: number
+  priority?: Priority
 }
 
 const TIMER_DURATIONS = {
   pomodoro: 25 * 60,
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
+}
+
+// ✅ Priority → Tailwind color mapping
+const PRIORITY_COLOR: Record<Priority, string> = {
+  high: "bg-red-500",
+  medium: "bg-yellow-400",
+  low: "bg-green-500",
 }
 
 export function PomodoroTimer() {
@@ -33,6 +42,7 @@ export function PomodoroTimer() {
   const [isAddingTask, setIsAddingTask] = useState(false)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [newTaskHours, setNewTaskHours] = useState<number>(1)
+  const [newTaskPriority, setNewTaskPriority] = useState<Priority>("medium") // 👈 default priority
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
 
@@ -62,13 +72,11 @@ export function PomodoroTimer() {
 
   const toggleTimer = () => {
     if (isRunning) {
-      // Pause: capture precise remaining time from the end anchor
       const msLeft = Math.max(0, (endTimeRef.current ?? Date.now()) - Date.now())
       setTimeLeft(Math.ceil(msLeft / 1000))
       endTimeRef.current = null
       setIsRunning(false)
     } else {
-      // Start: set the end anchor using current remaining seconds
       endTimeRef.current = Date.now() + timeLeft * 1000
       setIsRunning(true)
     }
@@ -100,9 +108,11 @@ export function PomodoroTimer() {
       isCompleted: false,
       targetMinutes: targetMins,
       remainingMinutes: 0,
+      priority: newTaskPriority,
     }
     setNewTaskTitle("")
     setNewTaskHours(1)
+    setNewTaskPriority("medium")
     setIsAddingTask(false)
 
     await mutate(
@@ -110,7 +120,11 @@ export function PomodoroTimer() {
         const res = await fetch("/api/tasks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: optimistic.title, targetHours: newTaskHours }),
+          body: JSON.stringify({
+            title: optimistic.title,
+            targetHours: newTaskHours,
+            priority: newTaskPriority,
+          }),
         })
         const created: Task = await res.json()
         return [...tasks.filter((t) => !t.id.startsWith("temp-")), created]
@@ -145,10 +159,14 @@ export function PomodoroTimer() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ remainingMinutes: nextRemaining }),
         })
-        return tasks.map((t) => (t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t))
+        return tasks.map((t) =>
+          t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t,
+        )
       },
       {
-        optimisticData: tasks.map((t) => (t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t)),
+        optimisticData: tasks.map((t) =>
+          t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t,
+        ),
         revalidate: true,
       },
     )
@@ -180,11 +198,9 @@ export function PomodoroTimer() {
       if (!end) return
       const msLeft = end - Date.now()
       const next = Math.max(0, Math.ceil(msLeft / 1000))
-      // Only update when the displayed second changes
       setTimeLeft((prev) => (prev !== next ? next : prev))
 
       if (msLeft <= 0) {
-        // Session finished exactly by wall clock
         endTimeRef.current = null
         setIsRunning(false)
         playAlarm()
@@ -204,7 +220,9 @@ export function PomodoroTimer() {
 
   useEffect(() => {
     const formatted = formatTime(timeLeft)
-    document.title = isRunning ? `${formatted} - ${mode.charAt(0).toUpperCase() + mode.slice(1)}` : `Pomodoro Timer`
+    document.title = isRunning
+      ? `${formatted} - ${mode.charAt(0).toUpperCase() + mode.slice(1)}`
+      : `Pomodoro Timer`
   }, [timeLeft, isRunning, mode])
 
   const selectedTask = tasks.find((t) => t.id === selectedTaskId)
@@ -213,14 +231,12 @@ export function PomodoroTimer() {
     <div className="min-h-screen hills text-foreground flex flex-col">
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
-      {/* Header */}
       <header className="glass p-4 text-center text-foreground text-1xl font-bold rounded-b-xl mb-4">
         Pomodoro Timer
       </header>
 
       <main className="flex-1 w-full flex flex-col items-center px-4">
         <div className="max-w-md w-full">
-          {/* Timer Card */}
           <Card className="glass border border-border p-8 text-center mb-4 rounded-xl">
             <div className="flex justify-center mb-4 gap-2">
               {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
@@ -249,12 +265,10 @@ export function PomodoroTimer() {
             </Button>
           </Card>
 
-          {/* Selected Task Name centered below timer */}
           {selectedTask && (
             <div className="text-2xl text-primary font-bold text-center mb-6">@{selectedTask.title}</div>
           )}
 
-          {/* Tasks Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-foreground text-lg font-semibold">Tasks</h2>
@@ -287,8 +301,20 @@ export function PomodoroTimer() {
                     step={0.25}
                     value={newTaskHours}
                     onChange={(e) => setNewTaskHours(Number(e.target.value))}
-                    className="w-28"
+                    className="w-20"
                   />
+
+                  {/* 👇 Priority Selector */}
+                  <select
+                    value={newTaskPriority}
+                    onChange={(e) => setNewTaskPriority(e.target.value as Priority)}
+                    className="border rounded px-2 py-1 text-sm bg-background text-foreground"
+                  >
+                    <option value="low">🟢 Low</option>
+                    <option value="medium">🟡 Medium</option>
+                    <option value="high">🔴 High</option>
+                  </select>
+
                   <Button onClick={addTask} size="sm">
                     Add
                   </Button>
@@ -304,6 +330,7 @@ export function PomodoroTimer() {
                 const target = task.targetMinutes ?? 60
                 const remaining = task.remainingMinutes ?? 0
                 const isSelected = selectedTaskId === task.id
+                const priority = task.priority ?? "medium"
 
                 return (
                   <Card
@@ -319,6 +346,11 @@ export function PomodoroTimer() {
                           onClick={(e) => e.stopPropagation()}
                           onCheckedChange={() => toggleTask(task.id)}
                           className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                        />
+                        {/* Colored priority dot */}
+                        <div
+                          className={`w-3 h-3 rounded-full ${PRIORITY_COLOR[priority]}`}
+                          title={`Priority: ${priority}`}
                         />
                         <span
                           className={
@@ -353,7 +385,9 @@ export function PomodoroTimer() {
         </div>
       </main>
 
-      <footer className="glass text-foreground text-center p-3 mt-3 rounded-t-xl">Made with ❤️ for Doyel</footer>
+      <footer className="glass text-foreground text-center p-3 mt-3 rounded-t-xl">
+        Made with ❤️ for Doyel
+      </footer>
     </div>
   )
 }
