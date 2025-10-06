@@ -21,13 +21,18 @@ interface Task {
   priority?: Priority
 }
 
+interface TotalTime {
+  _id: string
+  date: string
+  minutes: number
+}
+
 const TIMER_DURATIONS = {
   pomodoro: 25 * 60,
   shortBreak: 5 * 60,
   longBreak: 15 * 60,
 }
 
-// ✅ Priority → Tailwind color mapping
 const PRIORITY_COLOR: Record<Priority, string> = {
   high: "bg-red-500",
   medium: "bg-yellow-400",
@@ -42,14 +47,14 @@ export function PomodoroTimer() {
   const [isAddingTask, setIsAddingTask] = useState(false)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [newTaskHours, setNewTaskHours] = useState<number>(1)
-  const [newTaskPriority, setNewTaskPriority] = useState<Priority>("medium") // 👈 default priority
+  const [newTaskPriority, setNewTaskPriority] = useState<Priority>("medium")
+  const [dailyMinutes, setDailyMinutes] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
 
   const fetcher = useCallback((url: string) => fetch(url).then((r) => r.json()), [])
-  const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, {
-    fallbackData: [],
-  })
+  const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
+  const { data: totalTime, mutate: mutateTotalTime } = useSWR<TotalTime>("/api/totalTime", fetcher)
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -63,6 +68,18 @@ export function PomodoroTimer() {
     const minutesPart = m % 60
     return `${(hours + minutesPart / 100).toFixed(2)}h`
   }
+
+  // ✅ Format minutes into pseudo-hours for daily display
+  const formatPseudoHours = (mins?: number) => {
+    const m = Math.max(0, Math.round(mins ?? 0))
+    const hours = Math.floor(m / 60)
+    const minutesPart = m % 60
+    return `${hours}.${minutesPart.toString().padStart(2, "0")}`
+  }
+
+  useEffect(() => {
+    if (totalTime) setDailyMinutes(totalTime.minutes)
+  }, [totalTime])
 
   const handleModeChange = useCallback((newMode: TimerMode) => {
     setMode(newMode)
@@ -152,6 +169,7 @@ export function PomodoroTimer() {
     const prevRemaining = current.remainingMinutes ?? 0
     const nextRemaining = prevRemaining + sessionMinutes
 
+    // Update task remaining minutes
     await mutate(
       async () => {
         await fetch(`/api/tasks/${selectedTaskId}`, {
@@ -170,7 +188,17 @@ export function PomodoroTimer() {
         revalidate: true,
       },
     )
-  }, [selectedTaskId, tasks, mutate])
+
+    // ✅ FIX: Always use POST to increment in MongoDB (send session minutes)
+    await fetch("/api/totalTime", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ minutes: sessionMinutes }),
+    })
+
+    setDailyMinutes((prev) => prev + sessionMinutes)
+    mutateTotalTime()
+  }, [selectedTaskId, tasks, mutate, mutateTotalTime])
 
   const playAlarm = useCallback(() => {
     const el = audioRef.current
@@ -180,11 +208,8 @@ export function PomodoroTimer() {
       el.currentTime = 0
       void el.play().catch(() => {})
       count++
-      if (count < 3) {
-        el.onended = playOnce
-      } else {
-        el.onended = null
-      }
+      if (count < 3) el.onended = playOnce
+      else el.onended = null
     }
     playOnce()
     navigator.vibrate?.(200)
@@ -228,15 +253,21 @@ export function PomodoroTimer() {
   const selectedTask = tasks.find((t) => t.id === selectedTaskId)
 
   return (
-    <div className="min-h-screen hills text-foreground flex flex-col">
+    <div className="min-h-screen hills text-foreground flex flex-col relative">
+      {/* ✅ Daily pseudo-hours in top-left */}
+      <div className="fixed top-4 left-4 z-50 text-sm bg-primary/20 text-primary-foreground px-3 py-1 rounded shadow">
+        {formatPseudoHours(dailyMinutes)}h today
+      </div>
+
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
-      <header className="glass p-4 text-center text-foreground text-1xl font-bold rounded-b-xl mb-4">
+      <header className="glass p-4 text-center text-1xl font-bold rounded-b-xl mb-4">
         Pomodoro Timer
       </header>
 
       <main className="flex-1 w-full flex flex-col items-center px-4">
         <div className="max-w-md w-full">
+          {/* Timer Card */}
           <Card className="glass border border-border p-8 text-center mb-4 rounded-xl">
             <div className="flex justify-center mb-4 gap-2">
               {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
@@ -269,6 +300,7 @@ export function PomodoroTimer() {
             <div className="text-2xl text-primary font-bold text-center mb-6">@{selectedTask.title}</div>
           )}
 
+          {/* Tasks List */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-foreground text-lg font-semibold">Tasks</h2>
@@ -304,7 +336,6 @@ export function PomodoroTimer() {
                     className="w-20"
                   />
 
-                  {/* 👇 Priority Selector */}
                   <select
                     value={newTaskPriority}
                     onChange={(e) => setNewTaskPriority(e.target.value as Priority)}
@@ -347,7 +378,6 @@ export function PomodoroTimer() {
                           onCheckedChange={() => toggleTask(task.id)}
                           className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                         />
-                        {/* Colored priority dot */}
                         <div
                           className={`w-3 h-3 rounded-full ${PRIORITY_COLOR[priority]}`}
                           title={`Priority: ${priority}`}
