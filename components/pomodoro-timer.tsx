@@ -132,20 +132,15 @@ export function PomodoroTimer() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ remainingMinutes: nextRemaining }),
         })
-        return tasks.map((t) =>
-          t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t
-        )
+        return tasks.map((t) => (t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t))
       },
       {
-        optimisticData: tasks.map((t) =>
-          t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t
-        ),
+        optimisticData: tasks.map((t) => (t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t)),
         revalidate: true,
-      }
+      },
     )
   }, [selectedTaskId, tasks, mutate])
 
-  // Play alarm 3 times
   const playAlarm = useCallback(() => {
     const el = audioRef.current
     if (!el) return
@@ -164,7 +159,6 @@ export function PomodoroTimer() {
     navigator.vibrate?.(200)
   }, [])
 
-  // Timer interval
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null
     if (isRunning && timeLeft > 0) {
@@ -184,61 +178,75 @@ export function PomodoroTimer() {
     }
   }, [isRunning, timeLeft, mode, handleModeChange, playAlarm, addToRemainingMinutes])
 
-  // Update browser tab title
   useEffect(() => {
     const formatted = formatTime(timeLeft)
     document.title = isRunning ? `${formatted} - ${mode.charAt(0).toUpperCase() + mode.slice(1)}` : `Pomodoro Timer`
   }, [timeLeft, isRunning, mode])
 
+  const selectedTask = tasks.find((t) => t.id === selectedTaskId)
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-900 via-green-800 to-green-950 text-foreground flex flex-col">
+    <div className="min-h-screen hills text-foreground flex flex-col">
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
       {/* Header */}
-      <header className="bg-green-800/90 p-4 text-center text-white text-1xl font-bold rounded-b-lg shadow-md mb-4">
+      <header className="glass p-4 text-center text-foreground text-1xl font-bold rounded-b-xl mb-4">
         Pomodoro Timer
       </header>
 
-      {/* Main content */}
       <main className="flex-1 w-full flex flex-col items-center px-4">
-        {/* Timer Card and Tasks */}
         <div className="max-w-md w-full">
-          {/* ...existing timer and task cards remain unchanged... */}
-          <Card className="bg-green-800/90 border border-green-700 p-8 text-center mb-8 rounded-xl shadow-lg">
-            <div className="flex justify-center mb-8 gap-2">
+          {/* Timer Card */}
+          <Card className="glass border border-border p-8 text-center mb-4 rounded-xl">
+            <div className="flex justify-center mb-4 gap-2">
               {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
                 <Button
                   key={m}
                   variant={mode === m ? "default" : "ghost"}
                   size="sm"
                   onClick={() => handleModeChange(m)}
-                  className={mode === m ? "bg-green-500 text-white" : "text-white hover:bg-green-600/80"}
+                  className={
+                    mode === m ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-foreground/10"
+                  }
                 >
                   {m.charAt(0).toUpperCase() + m.slice(1)}
                 </Button>
               ))}
             </div>
-            <div className="text-9xl font-bold text-white mb-8 font-mono">{formatTime(timeLeft)}</div>
+
+            <div className="text-9xl font-bold text-foreground mb-6 font-mono">{formatTime(timeLeft)}</div>
+
             <Button
               onClick={toggleTimer}
               size="lg"
-              className="bg-green-500 text-white hover:bg-green-600 px-12 py-3 text-lg font-semibold rounded-lg"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-12 py-3 text-lg font-semibold rounded-lg"
             >
               {isRunning ? "PAUSE" : "START"}
             </Button>
           </Card>
 
-          {/* Tasks section stays as-is */}
+          {/* Selected Task Name centered below timer */}
+          {selectedTask && (
+            <div className="text-2xl text-primary font-bold text-center mb-6">
+              @{selectedTask.title}
+            </div>
+          )}
+
+          {/* Tasks Section */}
           <div className="space-y-4">
             <div className="flex items-center justify-between">
-              <h2 className="text-white text-lg font-semibold">Tasks</h2>
-              <Button size="sm" onClick={() => setIsAddingTask(true)} className="bg-green-500 text-white hover:bg-green-600">
+              <h2 className="text-foreground text-lg font-semibold">Tasks</h2>
+              <Button
+                size="sm"
+                onClick={() => setIsAddingTask(true)}
+                className="bg-primary text-primary-foreground hover:bg-primary/90"
+              >
                 <Plus className="w-4 h-4 mr-2" /> Add Task
               </Button>
             </div>
 
             {isAddingTask && (
-              <Card className="bg-green-800/90 border border-green-700 p-4 rounded-lg">
+              <Card className="glass border border-border p-4 rounded-lg">
                 <div className="flex flex-col md:flex-row md:items-center gap-3">
                   <Input
                     value={newTaskTitle}
@@ -259,8 +267,12 @@ export function PomodoroTimer() {
                     onChange={(e) => setNewTaskHours(Number(e.target.value))}
                     className="w-28"
                   />
-                  <Button onClick={addTask} size="sm">Add</Button>
-                  <Button onClick={() => setIsAddingTask(false)} variant="ghost" size="sm"><X className="w-4 h-4" /></Button>
+                  <Button onClick={addTask} size="sm">
+                    Add
+                  </Button>
+                  <Button onClick={() => setIsAddingTask(false)} variant="ghost" size="sm">
+                    <X className="w-4 h-4" />
+                  </Button>
                 </div>
               </Card>
             )}
@@ -274,7 +286,11 @@ export function PomodoroTimer() {
                 return (
                   <Card
                     key={task.id}
-                    className={`bg-green-900/80 border border-green-700 p-4 cursor-pointer rounded-lg ${isSelected ? "ring-2 ring-green-500" : ""}`}
+                    className={`glass border border-border p-4 rounded-lg cursor-pointer transition
+                      ${isSelected 
+                        ? "ring-2 ring-primary bg-primary/10" 
+                        : "hover:ring-1 hover:ring-primary/20"
+                      }`}
                     onClick={() => setSelectedTaskId(task.id)}
                   >
                     <div className="flex items-center justify-between">
@@ -283,16 +299,26 @@ export function PomodoroTimer() {
                           checked={task.isCompleted}
                           onClick={(e) => e.stopPropagation()}
                           onCheckedChange={() => toggleTask(task.id)}
-                          className="data-[state=checked]:bg-green-500 data-[state=checked]:border-green-500"
+                          className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                         />
-                        <span className={task.isCompleted ? "line-through opacity-60 text-green-200" : "text-white"}>{task.title}</span>
+                        <span
+                          className={
+                            task.isCompleted
+                              ? "line-through opacity-60 text-foreground/70"
+                              : "text-foreground"
+                          }
+                        >
+                          {task.title}
+                        </span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className="text-green-200">{formatHours(remaining)} / {formatHours(target)}</Badge>
+                        <Badge variant="secondary" className="text-foreground/80">
+                          {formatHours(remaining)} / {formatHours(target)}
+                        </Badge>
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-red-400 hover:bg-red-500/20"
+                          className="text-destructive hover:bg-destructive/20"
                           onClick={(e) => {
                             e.stopPropagation()
                             if (confirm("Delete this task?")) deleteTask(task.id)
@@ -310,10 +336,7 @@ export function PomodoroTimer() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="bg-green-800/90 text-white text-center p-3 mt-3 rounded-t-lg shadow-inner">
-        Made with ❤️ for Doyel
-      </footer>
+      <footer className="glass text-foreground text-center p-3 mt-3 rounded-t-xl">Made with ❤️ for Doyel</footer>
     </div>
   )
 }
