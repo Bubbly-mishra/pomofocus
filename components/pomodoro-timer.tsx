@@ -34,6 +34,7 @@ export function PomodoroTimer() {
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [newTaskHours, setNewTaskHours] = useState<number>(1)
   const audioRef = useRef<HTMLAudioElement | null>(null)
+  const endTimeRef = useRef<number | null>(null)
 
   const fetcher = useCallback((url: string) => fetch(url).then((r) => r.json()), [])
   const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, {
@@ -59,7 +60,19 @@ export function PomodoroTimer() {
     setIsRunning(false)
   }, [])
 
-  const toggleTimer = () => setIsRunning(!isRunning)
+  const toggleTimer = () => {
+    if (isRunning) {
+      // Pause: capture precise remaining time from the end anchor
+      const msLeft = Math.max(0, (endTimeRef.current ?? Date.now()) - Date.now())
+      setTimeLeft(Math.ceil(msLeft / 1000))
+      endTimeRef.current = null
+      setIsRunning(false)
+    } else {
+      // Start: set the end anchor using current remaining seconds
+      endTimeRef.current = Date.now() + timeLeft * 1000
+      setIsRunning(true)
+    }
+  }
 
   const toggleTask = async (taskId: string) => {
     const current = tasks.find((t) => t.id === taskId)
@@ -160,23 +173,34 @@ export function PomodoroTimer() {
   }, [])
 
   useEffect(() => {
-    let interval: NodeJS.Timeout | null = null
-    if (isRunning && timeLeft > 0) {
-      interval = setInterval(() => setTimeLeft((prev) => prev - 1), 1000)
-    } else if (timeLeft === 0) {
-      playAlarm()
-      setIsRunning(false)
-      if (mode === "pomodoro") {
-        void addToRemainingMinutes()
-        handleModeChange("shortBreak")
-      } else {
-        handleModeChange("pomodoro")
+    if (!isRunning) return
+    let raf = 0
+    const tick = () => {
+      const end = endTimeRef.current
+      if (!end) return
+      const msLeft = end - Date.now()
+      const next = Math.max(0, Math.ceil(msLeft / 1000))
+      // Only update when the displayed second changes
+      setTimeLeft((prev) => (prev !== next ? next : prev))
+
+      if (msLeft <= 0) {
+        // Session finished exactly by wall clock
+        endTimeRef.current = null
+        setIsRunning(false)
+        playAlarm()
+        if (mode === "pomodoro") {
+          void addToRemainingMinutes()
+          handleModeChange("shortBreak")
+        } else {
+          handleModeChange("pomodoro")
+        }
+        return
       }
+      raf = requestAnimationFrame(tick)
     }
-    return () => {
-      if (interval) clearInterval(interval)
-    }
-  }, [isRunning, timeLeft, mode, handleModeChange, playAlarm, addToRemainingMinutes])
+    raf = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(raf)
+  }, [isRunning, mode, playAlarm, addToRemainingMinutes, handleModeChange])
 
   useEffect(() => {
     const formatted = formatTime(timeLeft)
@@ -227,9 +251,7 @@ export function PomodoroTimer() {
 
           {/* Selected Task Name centered below timer */}
           {selectedTask && (
-            <div className="text-2xl text-primary font-bold text-center mb-6">
-              @{selectedTask.title}
-            </div>
+            <div className="text-2xl text-primary font-bold text-center mb-6">@{selectedTask.title}</div>
           )}
 
           {/* Tasks Section */}
@@ -287,10 +309,7 @@ export function PomodoroTimer() {
                   <Card
                     key={task.id}
                     className={`glass border border-border p-4 rounded-lg cursor-pointer transition
-                      ${isSelected 
-                        ? "ring-2 ring-primary bg-primary/10" 
-                        : "hover:ring-1 hover:ring-primary/20"
-                      }`}
+                      ${isSelected ? "ring-2 ring-primary bg-primary/10" : "hover:ring-1 hover:ring-primary/20"}`}
                     onClick={() => setSelectedTaskId(task.id)}
                   >
                     <div className="flex items-center justify-between">
@@ -303,9 +322,7 @@ export function PomodoroTimer() {
                         />
                         <span
                           className={
-                            task.isCompleted
-                              ? "line-through opacity-60 text-foreground/70"
-                              : "text-foreground"
+                            task.isCompleted ? "line-through opacity-60 text-foreground/70" : "text-foreground"
                           }
                         >
                           {task.title}
