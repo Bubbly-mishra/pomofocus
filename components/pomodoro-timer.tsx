@@ -28,9 +28,9 @@ interface TotalTime {
 }
 
 const TIMER_DURATIONS = {
-  pomodoro: 25 * 60,
-  shortBreak: 5 * 60,
-  longBreak: 15 * 60,
+  pomodoro: 50 * 60,
+  shortBreak: 10 * 60,
+  longBreak: 30 * 60,
 }
 
 const PRIORITY_COLOR: Record<Priority, string> = {
@@ -69,7 +69,6 @@ export function PomodoroTimer() {
     return `${(hours + minutesPart / 100).toFixed(2)}h`
   }
 
-  // ✅ Format minutes into pseudo-hours for daily display
   const formatPseudoHours = (mins?: number) => {
     const m = Math.max(0, Math.round(mins ?? 0))
     const hours = Math.floor(m / 60)
@@ -169,7 +168,6 @@ export function PomodoroTimer() {
     const prevRemaining = current.remainingMinutes ?? 0
     const nextRemaining = prevRemaining + sessionMinutes
 
-    // Update task remaining minutes
     await mutate(
       async () => {
         await fetch(`/api/tasks/${selectedTaskId}`, {
@@ -189,7 +187,6 @@ export function PomodoroTimer() {
       },
     )
 
-    // ✅ FIX: Always use POST to increment in MongoDB (send session minutes)
     await fetch("/api/totalTime", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -213,19 +210,24 @@ export function PomodoroTimer() {
     }
     playOnce()
     navigator.vibrate?.(200)
+
+    // Optional notification for background tab
+    if (Notification.permission === "granted") {
+      new Notification("Pomodoro Finished!", { body: "Time for a break ⏰" })
+    }
   }, [])
 
+  // ✅ Use setInterval + absolute time to avoid background/tab lag
   useEffect(() => {
     if (!isRunning) return
-    let raf = 0
-    const tick = () => {
-      const end = endTimeRef.current
-      if (!end) return
-      const msLeft = end - Date.now()
+    const interval = setInterval(() => {
+      if (!endTimeRef.current) return
+      const msLeft = endTimeRef.current - Date.now()
       const next = Math.max(0, Math.ceil(msLeft / 1000))
       setTimeLeft((prev) => (prev !== next ? next : prev))
 
       if (msLeft <= 0) {
+        clearInterval(interval)
         endTimeRef.current = null
         setIsRunning(false)
         playAlarm()
@@ -235,12 +237,9 @@ export function PomodoroTimer() {
         } else {
           handleModeChange("pomodoro")
         }
-        return
       }
-      raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
+    }, 1000)
+    return () => clearInterval(interval)
   }, [isRunning, mode, playAlarm, addToRemainingMinutes, handleModeChange])
 
   useEffect(() => {
@@ -254,7 +253,6 @@ export function PomodoroTimer() {
 
   return (
     <div className="min-h-screen hills text-foreground flex flex-col relative">
-      {/* ✅ Daily pseudo-hours in top-left */}
       <div className="fixed top-4 left-4 z-50 text-sm bg-primary/20 text-primary-foreground px-3 py-1 rounded shadow">
         {formatPseudoHours(dailyMinutes)}h today
       </div>
