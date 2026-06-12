@@ -77,12 +77,12 @@ const CATEGORY_CONFIG: Record<Category, {
 }
 
 // SVG progress ring
-function ProgressRing({ progress, size = 280, stroke = 6 }: { progress: number; size?: number; stroke?: number }) {
-  const r = (size - stroke) / 2
+function ProgressRing({ progress, size = 160, stroke = 4 }: { progress: number; size?: number; stroke?: number }) {
+  const r = (size - stroke * 2) / 2
   const circ = 2 * Math.PI * r
   const offset = circ * (1 - Math.max(0, Math.min(1, progress)))
   return (
-    <svg width={size} height={size} className="absolute inset-0 -rotate-90" style={{ top: "50%", left: "50%", transform: "translate(-50%,-50%) rotate(-90deg)" }}>
+    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
       <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-foreground/10" />
       <circle
         cx={size / 2} cy={size / 2} r={r} fill="none"
@@ -516,8 +516,8 @@ export function PomodoroTimer() {
           {/* Timer Card */}
           <Card className={`glass border border-border p-6 text-center rounded-2xl transition-all duration-700 ${justFinished ? "ring-2 ring-primary/80 bg-primary/5" : ""}`}>
             {/* Mode tabs */}
-            <div className="flex justify-center mb-5 gap-1">
-              {(Object.keys(TIMER_DURATIONS) as TimerMode[]).map((m) => (
+            <div className="flex justify-center mb-2 gap-1">
+              {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
                 <Button key={m} variant={mode === m ? "default" : "ghost"} size="sm" onClick={() => handleModeChange(m)}
                   className={`text-xs px-3 ${mode === m ? "bg-primary text-primary-foreground" : "text-foreground/60 hover:text-foreground hover:bg-foreground/10"}`}>
                   {MODE_LABELS[m]}
@@ -526,9 +526,9 @@ export function PomodoroTimer() {
             </div>
 
             {/* Clock with progress ring */}
-            <div className="relative flex items-center justify-center mb-5" style={{ height: 180 }}>
-              <ProgressRing progress={progress} size={180} stroke={4} />
-              <span className="text-7xl font-bold font-mono text-foreground tabular-nums relative z-10">
+            <div className="relative flex items-center justify-center my-4">
+              <ProgressRing progress={progress} size={160} stroke={4} />
+              <span className="absolute text-6xl font-bold font-mono text-foreground tabular-nums">
                 {fmt(timeLeft)}
               </span>
             </div>
