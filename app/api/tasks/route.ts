@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
 
 type Priority = "low" | "medium" | "high"
+type Category = "work" | "study"
 
 function toClient(doc: any) {
   return {
@@ -10,8 +11,9 @@ function toClient(doc: any) {
     isCompleted: doc.isCompleted ?? false,
     createdAt: doc.createdAt ?? new Date(),
     targetMinutes: doc.targetMinutes ?? 60,
-    remainingMinutes: doc.remainingMinutes ?? doc.targetMinutes ?? 60,
+    remainingMinutes: doc.remainingMinutes ?? 0,
     priority: doc.priority ?? "medium",
+    category: doc.category ?? "work",
   }
 }
 
@@ -30,14 +32,14 @@ export async function GET() {
                 { case: { $eq: ["$priority", "medium"] }, then: 2 },
                 { case: { $eq: ["$priority", "low"] }, then: 3 },
               ],
-              default: 2, // default = medium
+              default: 2,
             },
           },
         },
       },
       {
         $sort: {
-          priorityOrder: 1, // high first
+          priorityOrder: 1,
           createdAt: 1,
         },
       },
@@ -55,11 +57,12 @@ export async function POST(req: Request) {
   const rawHours = Number(body?.targetHours)
   const targetMinutes = Number.isFinite(rawHours) ? Math.max(0, Math.round(rawHours * 60)) : 60
 
-  // ✅ Validate priority
   const priority: Priority =
     body?.priority === "low" || body?.priority === "high" || body?.priority === "medium"
       ? body.priority
       : "medium"
+
+  const category: Category = body?.category === "study" ? "study" : "work"
 
   const db = await getDb()
   const doc = {
@@ -69,6 +72,7 @@ export async function POST(req: Request) {
     targetMinutes,
     remainingMinutes: 0,
     priority,
+    category,
   }
 
   const res = await db.collection("tasks").insertOne(doc)
