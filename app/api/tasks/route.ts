@@ -3,6 +3,7 @@ import { getDb } from "@/lib/mongodb"
 
 type Priority = "low" | "medium" | "high"
 type Category = "work" | "study" | "personal"
+type Schedule = "today" | "later"
 
 function toClient(doc: any) {
   return {
@@ -14,12 +15,12 @@ function toClient(doc: any) {
     remainingMinutes: doc.remainingMinutes ?? 0,
     priority: doc.priority ?? "medium",
     category: doc.category ?? "work",
+    schedule: doc.schedule ?? "later",
   }
 }
 
 export async function GET() {
   const db = await getDb()
-
   const items = await db
     .collection("tasks")
     .aggregate([
@@ -37,15 +38,9 @@ export async function GET() {
           },
         },
       },
-      {
-        $sort: {
-          priorityOrder: 1,
-          createdAt: 1,
-        },
-      },
+      { $sort: { priorityOrder: 1, createdAt: 1 } },
     ])
     .toArray()
-
   return NextResponse.json(items.map(toClient))
 }
 
@@ -59,10 +54,12 @@ export async function POST(req: Request) {
 
   const priority: Priority =
     body?.priority === "low" || body?.priority === "high" || body?.priority === "medium"
-      ? body.priority
-      : "medium"
+      ? body.priority : "medium"
 
-  const category: Category = body?.category === "study" ? "study" : body?.category === "personal" ? "personal" : "work"
+  const category: Category =
+    body?.category === "study" ? "study" : body?.category === "personal" ? "personal" : "work"
+
+  const schedule: Schedule = body?.schedule === "today" ? "today" : "later"
 
   const db = await getDb()
   const doc = {
@@ -73,6 +70,7 @@ export async function POST(req: Request) {
     remainingMinutes: 0,
     priority,
     category,
+    schedule,
   }
 
   const res = await db.collection("tasks").insertOne(doc)

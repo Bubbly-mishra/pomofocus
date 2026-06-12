@@ -41,6 +41,10 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     update.category = body.category
   }
 
+  if (body.schedule === "today" || body.schedule === "later") {
+    update.schedule = body.schedule
+  }
+
   if (!Object.keys(update).length) {
     return NextResponse.json({ error: "No valid fields to update" }, { status: 400 })
   }
@@ -57,5 +61,6 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     remainingMinutes: doc!.remainingMinutes ?? 0,
     priority: doc!.priority ?? "medium",
     category: doc!.category ?? "work",
+    schedule: doc!.schedule ?? "later",
   })
 }

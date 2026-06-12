@@ -6,12 +6,14 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
 type Priority = "low" | "medium" | "high"
 type Category = "work" | "study" | "personal"
+type Schedule = "today" | "later"
+type ActiveTab = "today" | Category
 
 interface Task {
   id: string
@@ -21,6 +23,7 @@ interface Task {
   remainingMinutes?: number
   priority?: Priority
   category: Category
+  schedule: Schedule
 }
 
 interface TotalTime {
@@ -41,24 +44,27 @@ const PRIORITY_COLOR: Record<Priority, string> = {
   low: "bg-green-500",
 }
 
-const CATEGORY_CONFIG: Record<Category, { label: string; icon: React.ReactNode; accent: string; headerBg: string }> = {
+const CATEGORY_CONFIG: Record<Category, { label: string; icon: React.ReactNode; accent: string; headerBg: string; dot: string }> = {
   work: {
     label: "Work",
     icon: <Briefcase className="w-4 h-4" />,
     accent: "ring-blue-400/60",
     headerBg: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+    dot: "bg-blue-400",
   },
   study: {
     label: "Study",
     icon: <BookOpen className="w-4 h-4" />,
     accent: "ring-purple-400/60",
     headerBg: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+    dot: "bg-purple-400",
   },
   personal: {
     label: "Personal",
     icon: <Heart className="w-4 h-4" />,
     accent: "ring-pink-400/60",
     headerBg: "bg-pink-500/15 text-pink-300 border-pink-500/30",
+    dot: "bg-pink-400",
   },
 }
 
@@ -66,12 +72,13 @@ export function PomodoroTimer() {
   const [mode, setMode] = useState<TimerMode>("pomodoro")
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS.pomodoro)
   const [isRunning, setIsRunning] = useState(false)
-  const [activeCategory, setActiveCategory] = useState<Category>("work")
+  const [activeTab, setActiveTab] = useState<ActiveTab>("today")
   const [newTaskTitle, setNewTaskTitle] = useState("")
-  const [isAddingTask, setIsAddingTask] = useState<Category | null>(null)
+  const [isAddingTask, setIsAddingTask] = useState<ActiveTab | null>(null)
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [newTaskHours, setNewTaskHours] = useState<number>(1)
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>("medium")
+  const [newTaskSchedule, setNewTaskSchedule] = useState<Schedule>("today")
   const [dailyMinutes, setDailyMinutes] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
@@ -80,6 +87,7 @@ export function PomodoroTimer() {
   const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
   const { data: totalTime, mutate: mutateTotalTime } = useSWR<TotalTime>("/api/totalTime", fetcher)
 
+  const todayTasks = tasks.filter((t) => t.schedule === "today")
   const workTasks = tasks.filter((t) => t.category === "work")
   const studyTasks = tasks.filter((t) => t.category === "study")
   const personalTasks = tasks.filter((t) => t.category === "personal")
@@ -143,8 +151,27 @@ export function PomodoroTimer() {
     )
   }
 
-  const addTask = async (category: Category) => {
+  const toggleSchedule = async (taskId: string) => {
+    const current = tasks.find((t) => t.id === taskId)
+    if (!current) return
+    const nextSchedule: Schedule = current.schedule === "today" ? "later" : "today"
+    const next: Task = { ...current, schedule: nextSchedule }
+    await mutate(
+      async () => {
+        await fetch(`/api/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schedule: nextSchedule }),
+        })
+        return tasks.map((t) => (t.id === taskId ? next : t))
+      },
+      { optimisticData: tasks.map((t) => (t.id === taskId ? next : t)), revalidate: true },
+    )
+  }
+
+  const addTask = async (tab: ActiveTab) => {
     if (!newTaskTitle.trim()) return
+    const category: Category = tab === "today" ? "work" : tab
     const targetMins = Math.max(0, Math.round((Number(newTaskHours) || 1) * 60))
     const optimistic: Task = {
       id: `temp-${Date.now()}`,
@@ -154,10 +181,12 @@ export function PomodoroTimer() {
       remainingMinutes: 0,
       priority: newTaskPriority,
       category,
+      schedule: tab === "today" ? "today" : newTaskSchedule,
     }
     setNewTaskTitle("")
     setNewTaskHours(1)
     setNewTaskPriority("medium")
+    setNewTaskSchedule("today")
     setIsAddingTask(null)
 
     await mutate(
@@ -170,6 +199,7 @@ export function PomodoroTimer() {
             targetHours: newTaskHours,
             priority: newTaskPriority,
             category,
+            schedule: optimistic.schedule,
           }),
         })
         const created: Task = await res.json()
@@ -278,112 +308,210 @@ export function PomodoroTimer() {
 
   const selectedTask = tasks.find((t) => t.id === selectedTaskId)
 
-  const renderTaskList = (category: Category) => {
-    const catTasks = category === "work" ? workTasks : category === "study" ? studyTasks : personalTasks
-    const cfg = CATEGORY_CONFIG[category]
-    const isAdding = isAddingTask === category
+  const renderTaskCard = (task: Task, accentClass: string) => {
+    const target = task.targetMinutes ?? 60
+    const remaining = task.remainingMinutes ?? 0
+    const isSelected = selectedTaskId === task.id
+    const priority = task.priority ?? "medium"
+    const catCfg = CATEGORY_CONFIG[task.category]
 
     return (
-      <div className="space-y-2">
-        {isAdding && (
-          <Card className="glass border border-border p-4 rounded-lg">
-            <div className="flex flex-col gap-3">
-              <Input
-                value={newTaskTitle}
-                onChange={(e) => setNewTaskTitle(e.target.value)}
-                placeholder="What are you working on?"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addTask(category)
-                  if (e.key === "Escape") setIsAddingTask(null)
-                }}
-                autoFocus
-              />
-              <div className="flex gap-2">
-                <Input
-                  type="number"
-                  min={0.25}
-                  step={0.25}
-                  value={newTaskHours}
-                  onChange={(e) => setNewTaskHours(Number(e.target.value))}
-                  className="w-24"
-                  placeholder="Hours"
-                />
-                <select
-                  value={newTaskPriority}
-                  onChange={(e) => setNewTaskPriority(e.target.value as Priority)}
-                  className="border rounded px-2 py-1 text-sm bg-background text-foreground flex-1"
-                >
-                  <option value="low">🟢 Low</option>
-                  <option value="medium">🟡 Medium</option>
-                  <option value="high">🔴 High</option>
-                </select>
-                <Button onClick={() => addTask(category)} size="sm">Add</Button>
-                <Button onClick={() => setIsAddingTask(null)} variant="ghost" size="sm">
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
-            </div>
-          </Card>
-        )}
+      <Card
+        key={task.id}
+        className={`glass border border-border p-3 rounded-lg cursor-pointer transition
+          ${isSelected ? `ring-2 ${accentClass} bg-primary/10` : "hover:ring-1 hover:ring-primary/20"}`}
+        onClick={() => setSelectedTaskId(task.id)}
+      >
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
+            <Checkbox
+              checked={task.isCompleted}
+              onClick={(e) => e.stopPropagation()}
+              onCheckedChange={() => toggleTask(task.id)}
+              className="data-[state=checked]:bg-primary data-[state=checked]:border-primary shrink-0"
+            />
+            <div
+              className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_COLOR[priority]}`}
+              title={`Priority: ${priority}`}
+            />
+            <span className={`truncate text-sm ${task.isCompleted ? "line-through opacity-50" : "text-foreground"}`}>
+              {task.title}
+            </span>
+          </div>
 
-        {catTasks.length === 0 && !isAdding && (
-          <p className="text-foreground/40 text-sm text-center py-4">No tasks yet</p>
-        )}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Category chip — shown in Today tab */}
+            {activeTab === "today" && (
+              <span className={`hidden sm:flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full ${catCfg.headerBg}`}>
+                {catCfg.icon}
+              </span>
+            )}
 
-        {catTasks.map((task) => {
-          const target = task.targetMinutes ?? 60
-          const remaining = task.remainingMinutes ?? 0
-          const isSelected = selectedTaskId === task.id
-          const priority = task.priority ?? "medium"
-
-          return (
-            <Card
-              key={task.id}
-              className={`glass border border-border p-4 rounded-lg cursor-pointer transition
-                ${isSelected ? `ring-2 ${cfg.accent} bg-primary/10` : "hover:ring-1 hover:ring-primary/20"}`}
-              onClick={() => setSelectedTaskId(task.id)}
+            {/* Schedule toggle */}
+            <button
+              title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
+              onClick={(e) => { e.stopPropagation(); toggleSchedule(task.id) }}
+              className={`text-xs px-2 py-0.5 rounded-full border transition
+                ${task.schedule === "today"
+                  ? "border-amber-400/50 text-amber-300 hover:bg-amber-400/10"
+                  : "border-foreground/20 text-foreground/40 hover:text-foreground/70 hover:border-foreground/40"
+                }`}
             >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3 min-w-0">
-                  <Checkbox
-                    checked={task.isCompleted}
-                    onClick={(e) => e.stopPropagation()}
-                    onCheckedChange={() => toggleTask(task.id)}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary shrink-0"
-                  />
-                  <div
-                    className={`w-2.5 h-2.5 rounded-full shrink-0 ${PRIORITY_COLOR[priority]}`}
-                    title={`Priority: ${priority}`}
-                  />
-                  <span
-                    className={`truncate ${task.isCompleted ? "line-through opacity-60 text-foreground/70" : "text-foreground"}`}
-                  >
-                    {task.title}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 shrink-0 ml-2">
-                  <Badge variant="secondary" className="text-foreground/80 text-xs">
-                    {formatHours(remaining)} / {formatHours(target)}
-                  </Badge>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-destructive hover:bg-destructive/20 h-7 w-7 p-0"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      if (confirm("Delete this task?")) deleteTask(task.id)
-                    }}
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )
-        })}
+              {task.schedule === "today" ? <Sun className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+            </button>
+
+            <Badge variant="secondary" className="text-foreground/70 text-xs hidden sm:inline-flex">
+              {formatHours(remaining)}/{formatHours(target)}
+            </Badge>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/20 h-6 w-6 p-0"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm("Delete this task?")) deleteTask(task.id)
+              }}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
+  const renderAddForm = (tab: ActiveTab) => {
+    const isToday = tab === "today"
+    return (
+      <Card className="glass border border-border p-4 rounded-lg">
+        <div className="flex flex-col gap-3">
+          <Input
+            value={newTaskTitle}
+            onChange={(e) => setNewTaskTitle(e.target.value)}
+            placeholder="What are you working on?"
+            onKeyDown={(e) => {
+              if (e.key === "Enter") addTask(tab)
+              if (e.key === "Escape") setIsAddingTask(null)
+            }}
+            autoFocus
+          />
+          <div className="flex gap-2 flex-wrap">
+            <Input
+              type="number"
+              min={0.25}
+              step={0.25}
+              value={newTaskHours}
+              onChange={(e) => setNewTaskHours(Number(e.target.value))}
+              className="w-20"
+              placeholder="hrs"
+            />
+            <select
+              value={newTaskPriority}
+              onChange={(e) => setNewTaskPriority(e.target.value as Priority)}
+              className="border rounded px-2 py-1 text-sm bg-background text-foreground"
+            >
+              <option value="low">🟢 Low</option>
+              <option value="medium">🟡 Medium</option>
+              <option value="high">🔴 High</option>
+            </select>
+            {/* Schedule picker — hidden in Today tab (always "today") */}
+            {!isToday && (
+              <select
+                value={newTaskSchedule}
+                onChange={(e) => setNewTaskSchedule(e.target.value as Schedule)}
+                className="border rounded px-2 py-1 text-sm bg-background text-foreground"
+              >
+                <option value="today">☀️ Today</option>
+                <option value="later">🕐 Later</option>
+              </select>
+            )}
+            <Button onClick={() => addTask(tab)} size="sm">Add</Button>
+            <Button onClick={() => setIsAddingTask(null)} variant="ghost" size="sm">
+              <X className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      </Card>
+    )
+  }
+
+  const renderTabContent = (tab: ActiveTab) => {
+    let displayTasks: Task[]
+    let accentClass: string
+
+    if (tab === "today") {
+      displayTasks = todayTasks
+      accentClass = "ring-amber-400/60"
+    } else {
+      displayTasks = tab === "work" ? workTasks : tab === "study" ? studyTasks : personalTasks
+      accentClass = CATEGORY_CONFIG[tab].accent
+    }
+
+    const incomplete = displayTasks.filter((t) => !t.isCompleted).length
+
+    return (
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <span className="text-foreground/60 text-xs">
+            {incomplete === 0 ? "All done! 🎉" : `${incomplete} remaining`}
+          </span>
+          <Button
+            size="sm"
+            onClick={() => {
+              setIsAddingTask(tab)
+              setNewTaskTitle("")
+              setNewTaskHours(1)
+              setNewTaskPriority("medium")
+              setNewTaskSchedule(tab === "today" ? "today" : "today")
+            }}
+            className="bg-primary text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="w-4 h-4 mr-1" /> Add Task
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          {isAddingTask === tab && renderAddForm(tab)}
+          {displayTasks.length === 0 && isAddingTask !== tab && (
+            <p className="text-foreground/30 text-sm text-center py-6">No tasks here</p>
+          )}
+          {displayTasks.map((task) => renderTaskCard(task, accentClass))}
+        </div>
       </div>
     )
   }
+
+  const tabs: { key: ActiveTab; label: string; icon: React.ReactNode; badge?: number; activeCls: string }[] = [
+    {
+      key: "today",
+      label: "Today",
+      icon: <Sun className="w-4 h-4" />,
+      badge: todayTasks.filter(t => !t.isCompleted).length,
+      activeCls: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    },
+    {
+      key: "work",
+      label: "Work",
+      icon: <Briefcase className="w-4 h-4" />,
+      badge: workTasks.filter(t => !t.isCompleted).length,
+      activeCls: CATEGORY_CONFIG.work.headerBg,
+    },
+    {
+      key: "study",
+      label: "Study",
+      icon: <BookOpen className="w-4 h-4" />,
+      badge: studyTasks.filter(t => !t.isCompleted).length,
+      activeCls: CATEGORY_CONFIG.study.headerBg,
+    },
+    {
+      key: "personal",
+      label: "Personal",
+      icon: <Heart className="w-4 h-4" />,
+      badge: personalTasks.filter(t => !t.isCompleted).length,
+      activeCls: CATEGORY_CONFIG.personal.headerBg,
+    },
+  ]
 
   return (
     <div className="min-h-screen hills text-foreground flex flex-col relative">
@@ -408,17 +536,13 @@ export function PomodoroTimer() {
                   variant={mode === m ? "default" : "ghost"}
                   size="sm"
                   onClick={() => handleModeChange(m)}
-                  className={
-                    mode === m ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-foreground/10"
-                  }
+                  className={mode === m ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-foreground/10"}
                 >
                   {m.charAt(0).toUpperCase() + m.slice(1)}
                 </Button>
               ))}
             </div>
-
             <div className="text-9xl font-bold text-foreground mb-6 font-mono">{formatTime(timeLeft)}</div>
-
             <Button
               onClick={toggleTimer}
               size="lg"
@@ -429,66 +553,44 @@ export function PomodoroTimer() {
           </Card>
 
           {selectedTask && (
-            <div className="text-xl text-primary font-bold text-center mb-4 flex items-center justify-center gap-2">
+            <div className="text-lg text-primary font-bold text-center mb-4 flex items-center justify-center gap-2">
               {CATEGORY_CONFIG[selectedTask.category].icon}
               @{selectedTask.title}
+              <span className={`text-xs px-2 py-0.5 rounded-full border ml-1
+                ${selectedTask.schedule === "today"
+                  ? "border-amber-400/50 text-amber-300"
+                  : "border-foreground/20 text-foreground/40"}`}>
+                {selectedTask.schedule === "today" ? "Today" : "Later"}
+              </span>
             </div>
           )}
 
-          {/* Category Tabs */}
-          <div className="flex gap-2 mb-3">
-            {(["work", "study", "personal"] as Category[]).map((cat) => {
-              const cfg = CATEGORY_CONFIG[cat]
-              const isActive = activeCategory === cat
-              const count = (cat === "work" ? workTasks : cat === "study" ? studyTasks : personalTasks).filter(t => !t.isCompleted).length
-              return (
-                <button
-                  key={cat}
-                  onClick={() => setActiveCategory(cat)}
-                  className={`flex-1 flex items-center justify-center gap-2 py-2 px-4 rounded-lg border text-sm font-semibold transition-all
-                    ${isActive
-                      ? `${cfg.headerBg} border-current`
-                      : "border-border text-foreground/50 hover:text-foreground/80 hover:border-border/80"
-                    }`}
-                >
-                  {cfg.icon}
-                  {cfg.label}
-                  {count > 0 && (
-                    <span className={`text-xs rounded-full px-1.5 py-0.5 ${isActive ? "bg-white/20" : "bg-foreground/10"}`}>
-                      {count}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
+          {/* Tabs */}
+          <div className="grid grid-cols-4 gap-1.5 mb-3">
+            {tabs.map(({ key, label, icon, badge, activeCls }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg border text-xs font-semibold transition-all
+                  ${activeTab === key
+                    ? `${activeCls} border-current`
+                    : "border-border text-foreground/40 hover:text-foreground/70 hover:border-border/70"
+                  }`}
+              >
+                {icon}
+                <span>{label}</span>
+                {(badge ?? 0) > 0 && (
+                  <span className={`text-xs rounded-full px-1.5 leading-4 ${activeTab === key ? "bg-white/20" : "bg-foreground/10"}`}>
+                    {badge}
+                  </span>
+                )}
+              </button>
+            ))}
           </div>
 
-          {/* Active Category Task Panel */}
-          {(["work", "study", "personal"] as Category[]).map((cat) => (
-            activeCategory === cat && (
-              <div key={cat} className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-foreground/70 text-sm font-medium">
-                    {workTasks.filter(t=>!t.isCompleted).length + studyTasks.filter(t=>!t.isCompleted).length + personalTasks.filter(t=>!t.isCompleted).length === 0
-                      ? "All done! 🎉"
-                      : `${(cat === "work" ? workTasks : studyTasks).filter(t => !t.isCompleted).length} task(s) remaining`}
-                  </h2>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setIsAddingTask(cat)
-                      setNewTaskTitle("")
-                      setNewTaskHours(1)
-                      setNewTaskPriority("medium")
-                    }}
-                    className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  >
-                    <Plus className="w-4 h-4 mr-1" /> Add Task
-                  </Button>
-                </div>
-                {renderTaskList(cat)}
-              </div>
-            )
+          {/* Tab Content */}
+          {tabs.map(({ key }) => activeTab === key && (
+            <div key={key}>{renderTabContent(key)}</div>
           ))}
         </div>
       </main>
