@@ -5,9 +5,9 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'v0 App',
-  description: 'Created with v0',
-  generator: 'v0.app',
+  title: 'Pomodoro Timer',
+  description: 'Stay focused with Pomodoro — track tasks across Work, Study & Personal.',
+  icons: { icon: '/clock.png' },
 }
 
 export default function RootLayout({
