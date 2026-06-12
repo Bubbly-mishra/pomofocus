@@ -32,16 +32,10 @@ interface TotalTime {
   minutes: number
 }
 
-const TIMER_DURATIONS: Record<TimerMode, number> = {
+const TIMER_DURATIONS = {
   pomodoro: 50 * 60,
   shortBreak: 10 * 60,
   longBreak: 30 * 60,
-}
-
-const MODE_LABELS: Record<TimerMode, string> = {
-  pomodoro: "Pomodoro",
-  shortBreak: "Short Break",
-  longBreak: "Long Break",
 }
 
 const PRIORITY_COLOR: Record<Priority, string> = {
@@ -50,49 +44,28 @@ const PRIORITY_COLOR: Record<Priority, string> = {
   low: "bg-green-500",
 }
 
-const CATEGORY_CONFIG: Record<Category, {
-  label: string
-  icon: React.ReactNode
-  accent: string
-  headerBg: string
-}> = {
+const CATEGORY_CONFIG: Record<Category, { label: string; icon: React.ReactNode; accent: string; headerBg: string; dot: string }> = {
   work: {
     label: "Work",
     icon: <Briefcase className="w-4 h-4" />,
     accent: "ring-blue-400/60",
     headerBg: "bg-blue-500/15 text-blue-300 border-blue-500/30",
+    dot: "bg-blue-400",
   },
   study: {
     label: "Study",
     icon: <BookOpen className="w-4 h-4" />,
     accent: "ring-purple-400/60",
     headerBg: "bg-purple-500/15 text-purple-300 border-purple-500/30",
+    dot: "bg-purple-400",
   },
   personal: {
     label: "Personal",
     icon: <Heart className="w-4 h-4" />,
     accent: "ring-pink-400/60",
     headerBg: "bg-pink-500/15 text-pink-300 border-pink-500/30",
+    dot: "bg-pink-400",
   },
-}
-
-// SVG progress ring
-function ProgressRing({ progress, size = 160, stroke = 4 }: { progress: number; size?: number; stroke?: number }) {
-  const r = (size - stroke * 2) / 2
-  const circ = 2 * Math.PI * r
-  const offset = circ * (1 - Math.max(0, Math.min(1, progress)))
-  return (
-    <svg width={size} height={size} style={{ transform: "rotate(-90deg)" }}>
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="currentColor" strokeWidth={stroke} className="text-foreground/10" />
-      <circle
-        cx={size / 2} cy={size / 2} r={r} fill="none"
-        stroke="currentColor" strokeWidth={stroke}
-        strokeDasharray={circ} strokeDashoffset={offset}
-        strokeLinecap="round"
-        className="text-primary transition-all duration-1000 ease-linear"
-      />
-    </svg>
-  )
 }
 
 export function PomodoroTimer() {
@@ -102,65 +75,47 @@ export function PomodoroTimer() {
   const [activeTab, setActiveTab] = useState<ActiveTab>("today")
   const [newTaskTitle, setNewTaskTitle] = useState("")
   const [isAddingTask, setIsAddingTask] = useState<ActiveTab | null>(null)
-  const [newTaskCategory, setNewTaskCategory] = useState<Category>("work")
   const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null)
   const [newTaskHours, setNewTaskHours] = useState<number>(1)
   const [newTaskPriority, setNewTaskPriority] = useState<Priority>("medium")
   const [newTaskSchedule, setNewTaskSchedule] = useState<Schedule>("today")
   const [dailyMinutes, setDailyMinutes] = useState(0)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
-  const [justFinished, setJustFinished] = useState(false)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
-  const containerRef = useRef<HTMLDivElement>(null)
 
   const fetcher = useCallback((url: string) => fetch(url).then((r) => r.json()), [])
   const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
   const { data: totalTime, mutate: mutateTotalTime } = useSWR<TotalTime>("/api/totalTime", fetcher)
 
-  const todayTasks    = tasks.filter((t) => t.schedule === "today")
-  const workTasks     = tasks.filter((t) => t.category === "work")
-  const studyTasks    = tasks.filter((t) => t.category === "study")
+  const todayTasks = tasks.filter((t) => t.schedule === "today")
+  const workTasks = tasks.filter((t) => t.category === "work")
+  const studyTasks = tasks.filter((t) => t.category === "study")
   const personalTasks = tasks.filter((t) => t.category === "personal")
 
-  const totalDuration = TIMER_DURATIONS[mode]
-  const progress = timeLeft / totalDuration
-
-  // ── helpers ──────────────────────────────────────────────────────────────
-  const fmt = (s: number) => {
-    const m = Math.floor(s / 60), sec = s % 60
-    return `${String(m).padStart(2, "0")}:${String(sec).padStart(2, "0")}`
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`
   }
 
-  const fmtMins = (mins?: number) => {
+  const formatHours = (mins?: number) => {
     const m = Math.max(0, Math.round(mins ?? 0))
-    const h = Math.floor(m / 60), rem = m % 60
-    if (h === 0) return `${rem}m`
-    if (rem === 0) return `${h}h`
-    return `${h}h ${rem}m`
+    const hours = Math.floor(m / 60)
+    const minutesPart = m % 60
+    return `${(hours + minutesPart / 100).toFixed(2)}h`
   }
 
-  const fmtDailyHours = (mins?: number) => {
+  const formatPseudoHours = (mins?: number) => {
     const m = Math.max(0, Math.round(mins ?? 0))
-    const h = Math.floor(m / 60), rem = m % 60
-    return `${h}.${String(rem).padStart(2, "0")}h`
+    const hours = Math.floor(m / 60)
+    const minutesPart = m % 60
+    return `${hours}.${minutesPart.toString().padStart(2, "0")}`
   }
 
-  useEffect(() => { if (totalTime) setDailyMinutes(totalTime.minutes) }, [totalTime])
-
-  // ── spacebar shortcut ─────────────────────────────────────────────────────
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.code === "Space" && !(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLSelectElement)) {
-        e.preventDefault()
-        toggleTimer()
-      }
-    }
-    window.addEventListener("keydown", handler)
-    return () => window.removeEventListener("keydown", handler)
-  })
+    if (totalTime) setDailyMinutes(totalTime.minutes)
+  }, [totalTime])
 
-  // ── timer ─────────────────────────────────────────────────────────────────
   const handleModeChange = useCallback((newMode: TimerMode) => {
     setMode(newMode)
     setTimeLeft(TIMER_DURATIONS[newMode])
@@ -179,34 +134,45 @@ export function PomodoroTimer() {
     }
   }
 
-  // ── task mutations ────────────────────────────────────────────────────────
-  const patchTask = useCallback(async (taskId: string, patch: object) => {
-    const optimistic = tasks.map((t) => t.id === taskId ? { ...t, ...patch } : t)
+  const toggleTask = async (taskId: string) => {
+    const current = tasks.find((t) => t.id === taskId)
+    if (!current) return
+    const next: Task = { ...current, isCompleted: !current.isCompleted }
     await mutate(
       async () => {
         await fetch(`/api/tasks/${taskId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(patch),
+          body: JSON.stringify({ isCompleted: next.isCompleted }),
         })
-        return optimistic
+        return tasks.map((t) => (t.id === taskId ? next : t))
       },
-      { optimisticData: optimistic, revalidate: true },
+      { optimisticData: tasks.map((t) => (t.id === taskId ? next : t)), revalidate: true },
     )
-  }, [tasks, mutate])
+  }
 
-  const toggleTask     = (id: string) => patchTask(id, { isCompleted: !tasks.find(t => t.id === id)?.isCompleted })
-  const toggleSchedule = (id: string) => {
-    const t = tasks.find(t => t.id === id)
-    if (t) patchTask(id, { schedule: t.schedule === "today" ? "later" : "today" })
+  const toggleSchedule = async (taskId: string) => {
+    const current = tasks.find((t) => t.id === taskId)
+    if (!current) return
+    const nextSchedule: Schedule = current.schedule === "today" ? "later" : "today"
+    const next: Task = { ...current, schedule: nextSchedule }
+    await mutate(
+      async () => {
+        await fetch(`/api/tasks/${taskId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ schedule: nextSchedule }),
+        })
+        return tasks.map((t) => (t.id === taskId ? next : t))
+      },
+      { optimisticData: tasks.map((t) => (t.id === taskId ? next : t)), revalidate: true },
+    )
   }
 
   const addTask = async (tab: ActiveTab) => {
     if (!newTaskTitle.trim()) return
-    const category: Category = tab === "today" ? newTaskCategory : tab
-    const schedule: Schedule = tab === "today" ? "today" : newTaskSchedule
+    const category: Category = tab === "today" ? "work" : tab
     const targetMins = Math.max(0, Math.round((Number(newTaskHours) || 1) * 60))
-
     const optimistic: Task = {
       id: `temp-${Date.now()}`,
       title: newTaskTitle.trim(),
@@ -215,18 +181,26 @@ export function PomodoroTimer() {
       remainingMinutes: 0,
       priority: newTaskPriority,
       category,
-      schedule,
+      schedule: tab === "today" ? "today" : newTaskSchedule,
     }
-
-    setNewTaskTitle(""); setNewTaskHours(1); setNewTaskPriority("medium")
-    setNewTaskSchedule("today"); setNewTaskCategory("work"); setIsAddingTask(null)
+    setNewTaskTitle("")
+    setNewTaskHours(1)
+    setNewTaskPriority("medium")
+    setNewTaskSchedule("today")
+    setIsAddingTask(null)
 
     await mutate(
       async () => {
         const res = await fetch("/api/tasks", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ title: optimistic.title, targetHours: newTaskHours, priority: newTaskPriority, category, schedule }),
+          body: JSON.stringify({
+            title: optimistic.title,
+            targetHours: newTaskHours,
+            priority: newTaskPriority,
+            category,
+            schedule: optimistic.schedule,
+          }),
         })
         const created: Task = await res.json()
         return [...tasks.filter((t) => !t.id.startsWith("temp-")), created]
@@ -237,10 +211,11 @@ export function PomodoroTimer() {
 
   const deleteTask = async (taskId: string) => {
     const next = tasks.filter((t) => t.id !== taskId)
-    setConfirmDeleteId(null)
-    if (selectedTaskId === taskId) setSelectedTaskId(null)
     await mutate(
-      async () => { await fetch(`/api/tasks/${taskId}`, { method: "DELETE" }); return next },
+      async () => {
+        await fetch(`/api/tasks/${taskId}`, { method: "DELETE" })
+        return next
+      },
       { optimisticData: next, revalidate: true },
     )
   }
@@ -250,7 +225,8 @@ export function PomodoroTimer() {
     const sessionMinutes = Math.round(TIMER_DURATIONS.pomodoro / 60)
     const current = tasks.find((t) => t.id === selectedTaskId)
     if (!current) return
-    const nextRemaining = (current.remainingMinutes ?? 0) + sessionMinutes
+    const prevRemaining = current.remainingMinutes ?? 0
+    const nextRemaining = prevRemaining + sessionMinutes
 
     await mutate(
       async () => {
@@ -259,12 +235,25 @@ export function PomodoroTimer() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ remainingMinutes: nextRemaining }),
         })
-        return tasks.map((t) => t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t)
+        return tasks.map((t) =>
+          t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t,
+        )
       },
-      { optimisticData: tasks.map((t) => t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t), revalidate: true },
+      {
+        optimisticData: tasks.map((t) =>
+          t.id === selectedTaskId ? { ...t, remainingMinutes: nextRemaining } : t,
+        ),
+        revalidate: true,
+      },
     )
-    await fetch("/api/totalTime", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: sessionMinutes }) })
-    setDailyMinutes((p) => p + sessionMinutes)
+
+    await fetch("/api/totalTime", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ minutes: sessionMinutes }),
+    })
+
+    setDailyMinutes((prev) => prev + sessionMinutes)
     mutateTotalTime()
   }, [selectedTaskId, tasks, mutate, mutateTotalTime])
 
@@ -273,31 +262,32 @@ export function PomodoroTimer() {
     if (!el) return
     let count = 0
     const playOnce = () => {
-      el.currentTime = 0; void el.play().catch(() => {})
+      el.currentTime = 0
+      void el.play().catch(() => {})
       count++
-      if (count < 3) el.onended = playOnce; else el.onended = null
+      if (count < 3) el.onended = playOnce
+      else el.onended = null
     }
     playOnce()
     navigator.vibrate?.(200)
-    if (Notification.permission === "granted") new Notification("Pomodoro Finished!", { body: "Time for a break ⏰" })
+    if (Notification.permission === "granted") {
+      new Notification("Pomodoro Finished!", { body: "Time for a break ⏰" })
+    }
   }, [])
 
-  // ── tick ──────────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!isRunning) return
     const interval = setInterval(() => {
       if (!endTimeRef.current) return
       const msLeft = endTimeRef.current - Date.now()
       const next = Math.max(0, Math.ceil(msLeft / 1000))
-      setTimeLeft((prev) => prev !== next ? next : prev)
+      setTimeLeft((prev) => (prev !== next ? next : prev))
 
       if (msLeft <= 0) {
         clearInterval(interval)
         endTimeRef.current = null
         setIsRunning(false)
         playAlarm()
-        setJustFinished(true)
-        setTimeout(() => setJustFinished(false), 1500)
         if (mode === "pomodoro") {
           void addToRemainingMinutes()
           handleModeChange("shortBreak")
@@ -305,105 +295,92 @@ export function PomodoroTimer() {
           handleModeChange("pomodoro")
         }
       }
-    }, 500)
+    }, 1000)
     return () => clearInterval(interval)
   }, [isRunning, mode, playAlarm, addToRemainingMinutes, handleModeChange])
 
-  // ── doc title ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    document.title = isRunning ? `${fmt(timeLeft)} — ${MODE_LABELS[mode]}` : "Pomodoro Timer"
+    const formatted = formatTime(timeLeft)
+    document.title = isRunning
+      ? `${formatted} - ${mode.charAt(0).toUpperCase() + mode.slice(1)}`
+      : `Pomodoro Timer`
   }, [timeLeft, isRunning, mode])
 
   const selectedTask = tasks.find((t) => t.id === selectedTaskId)
 
-  // ── task card ─────────────────────────────────────────────────────────────
   const renderTaskCard = (task: Task, accentClass: string) => {
+    const target = task.targetMinutes ?? 60
+    const remaining = task.remainingMinutes ?? 0
     const isSelected = selectedTaskId === task.id
     const priority = task.priority ?? "medium"
     const catCfg = CATEGORY_CONFIG[task.category]
-    const spent = task.remainingMinutes ?? 0
-    const target = task.targetMinutes ?? 60
-    const spentPct = Math.min(1, spent / target)
-    const isConfirming = confirmDeleteId === task.id
 
     return (
       <Card
         key={task.id}
-        className={`glass border border-border rounded-lg cursor-pointer transition-all duration-150
+        className={`glass border border-border p-3 rounded-lg cursor-pointer transition
           ${isSelected ? `ring-2 ${accentClass} bg-primary/10` : "hover:ring-1 hover:ring-primary/20"}`}
-        onClick={() => setSelectedTaskId(isSelected ? null : task.id)}
+        onClick={() => setSelectedTaskId(task.id)}
       >
-        <div className="p-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0">
             <Checkbox
               checked={task.isCompleted}
               onClick={(e) => e.stopPropagation()}
               onCheckedChange={() => toggleTask(task.id)}
               className="data-[state=checked]:bg-primary data-[state=checked]:border-primary shrink-0"
             />
-            <div className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_COLOR[priority]}`} title={`${priority} priority`} />
-            <span className={`flex-1 text-sm min-w-0 break-words leading-snug ${task.isCompleted ? "line-through opacity-40" : "text-foreground"}`}>
+            <div
+              className={`w-2 h-2 rounded-full shrink-0 ${PRIORITY_COLOR[priority]}`}
+              title={`Priority: ${priority}`}
+            />
+            <span className={`truncate text-sm ${task.isCompleted ? "line-through opacity-50" : "text-foreground"}`}>
               {task.title}
             </span>
-            <div className="flex items-center gap-1 shrink-0 ml-1">
-              {/* Category chip in Today tab */}
-              {activeTab === "today" && (
-                <span className={`flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border ${catCfg.headerBg}`} title={catCfg.label}>
-                  {catCfg.icon}
-                </span>
-              )}
-              {/* Schedule pill */}
-              <button
-                title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
-                onClick={(e) => { e.stopPropagation(); toggleSchedule(task.id) }}
-                className={`flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border transition-colors
-                  ${task.schedule === "today"
-                    ? "border-amber-400/50 text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
-                    : "border-foreground/15 text-foreground/35 hover:text-foreground/60 hover:border-foreground/30"}`}
-              >
-                {task.schedule === "today" ? <Sun className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
-              </button>
-              {/* Delete / confirm */}
-              {isConfirming ? (
-                <>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); deleteTask(task.id) }}
-                    className="text-xs px-2 py-0.5 rounded bg-destructive/80 text-white hover:bg-destructive transition-colors"
-                  >Yes</button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(null) }}
-                    className="text-xs px-2 py-0.5 rounded border border-border text-foreground/60 hover:text-foreground transition-colors"
-                  >No</button>
-                </>
-              ) : (
-                <button
-                  onClick={(e) => { e.stopPropagation(); setConfirmDeleteId(task.id) }}
-                  className="text-destructive/60 hover:text-destructive transition-colors p-0.5 rounded"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
           </div>
 
-          {/* Progress bar for time spent */}
-          {target > 0 && (
-            <div className="mt-2 flex items-center gap-2">
-              <div className="flex-1 h-1 rounded-full bg-foreground/10 overflow-hidden">
-                <div
-                  className="h-full rounded-full bg-primary/60 transition-all duration-500"
-                  style={{ width: `${spentPct * 100}%` }}
-                />
-              </div>
-              <span className="text-xs text-foreground/40 shrink-0">{fmtMins(spent)} / {fmtMins(target)}</span>
-            </div>
-          )}
+          <div className="flex items-center gap-1 shrink-0">
+            {/* Category chip — shown in Today tab */}
+            {activeTab === "today" && (
+              <span className={`hidden sm:flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full ${catCfg.headerBg}`}>
+                {catCfg.icon}
+              </span>
+            )}
+
+            {/* Schedule toggle */}
+            <button
+              title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
+              onClick={(e) => { e.stopPropagation(); toggleSchedule(task.id) }}
+              className={`text-xs px-2 py-0.5 rounded-full border transition
+                ${task.schedule === "today"
+                  ? "border-amber-400/50 text-amber-300 hover:bg-amber-400/10"
+                  : "border-foreground/20 text-foreground/40 hover:text-foreground/70 hover:border-foreground/40"
+                }`}
+            >
+              {task.schedule === "today" ? <Sun className="w-3 h-3" /> : <Clock className="w-3 h-3" />}
+            </button>
+
+            <Badge variant="secondary" className="text-foreground/70 text-xs hidden sm:inline-flex">
+              {formatHours(remaining)}/{formatHours(target)}
+            </Badge>
+
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-destructive hover:bg-destructive/20 h-6 w-6 p-0"
+              onClick={(e) => {
+                e.stopPropagation()
+                if (confirm("Delete this task?")) deleteTask(task.id)
+              }}
+            >
+              <Trash2 className="w-3 h-3" />
+            </Button>
+          </div>
         </div>
       </Card>
     )
   }
 
-  // ── add form ──────────────────────────────────────────────────────────────
   const renderAddForm = (tab: ActiveTab) => {
     const isToday = tab === "today"
     return (
@@ -413,35 +390,36 @@ export function PomodoroTimer() {
             value={newTaskTitle}
             onChange={(e) => setNewTaskTitle(e.target.value)}
             placeholder="What are you working on?"
-            onKeyDown={(e) => { if (e.key === "Enter") addTask(tab); if (e.key === "Escape") setIsAddingTask(null) }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") addTask(tab)
+              if (e.key === "Escape") setIsAddingTask(null)
+            }}
             autoFocus
           />
-          <div className="flex gap-2 flex-wrap items-center">
+          <div className="flex gap-2 flex-wrap">
             <Input
-              type="number" min={0.25} step={0.25} value={newTaskHours}
+              type="number"
+              min={0.25}
+              step={0.25}
+              value={newTaskHours}
               onChange={(e) => setNewTaskHours(Number(e.target.value))}
-              className="w-20" placeholder="hrs"
+              className="w-20"
+              placeholder="hrs"
             />
             <select
-              value={newTaskPriority} onChange={(e) => setNewTaskPriority(e.target.value as Priority)}
+              value={newTaskPriority}
+              onChange={(e) => setNewTaskPriority(e.target.value as Priority)}
               className="border rounded px-2 py-1 text-sm bg-background text-foreground"
             >
               <option value="low">🟢 Low</option>
               <option value="medium">🟡 Medium</option>
               <option value="high">🔴 High</option>
             </select>
-            {isToday ? (
+            {/* Schedule picker — hidden in Today tab (always "today") */}
+            {!isToday && (
               <select
-                value={newTaskCategory} onChange={(e) => setNewTaskCategory(e.target.value as Category)}
-                className="border rounded px-2 py-1 text-sm bg-background text-foreground"
-              >
-                <option value="work">💼 Work</option>
-                <option value="study">📖 Study</option>
-                <option value="personal">🩷 Personal</option>
-              </select>
-            ) : (
-              <select
-                value={newTaskSchedule} onChange={(e) => setNewTaskSchedule(e.target.value as Schedule)}
+                value={newTaskSchedule}
+                onChange={(e) => setNewTaskSchedule(e.target.value as Schedule)}
                 className="border rounded px-2 py-1 text-sm bg-background text-foreground"
               >
                 <option value="today">☀️ Today</option>
@@ -449,139 +427,175 @@ export function PomodoroTimer() {
               </select>
             )}
             <Button onClick={() => addTask(tab)} size="sm">Add</Button>
-            <Button onClick={() => setIsAddingTask(null)} variant="ghost" size="sm"><X className="w-4 h-4" /></Button>
+            <Button onClick={() => setIsAddingTask(null)} variant="ghost" size="sm">
+              <X className="w-4 h-4" />
+            </Button>
           </div>
         </div>
       </Card>
     )
   }
 
-  // ── tab content ───────────────────────────────────────────────────────────
   const renderTabContent = (tab: ActiveTab) => {
-    const displayTasks = tab === "today" ? todayTasks : tab === "work" ? workTasks : tab === "study" ? studyTasks : personalTasks
-    const accentClass  = tab === "today" ? "ring-amber-400/60" : CATEGORY_CONFIG[tab].accent
-    const incomplete   = displayTasks.filter((t) => !t.isCompleted).length
+    let displayTasks: Task[]
+    let accentClass: string
+
+    if (tab === "today") {
+      displayTasks = todayTasks
+      accentClass = "ring-amber-400/60"
+    } else {
+      displayTasks = tab === "work" ? workTasks : tab === "study" ? studyTasks : personalTasks
+      accentClass = CATEGORY_CONFIG[tab].accent
+    }
+
+    const incomplete = displayTasks.filter((t) => !t.isCompleted).length
 
     return (
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-foreground/50 text-xs">
-            {incomplete === 0 && displayTasks.length > 0 ? "All done! 🎉" : incomplete === 0 ? "No tasks yet" : `${incomplete} remaining`}
+          <span className="text-foreground/60 text-xs">
+            {incomplete === 0 ? "All done! 🎉" : `${incomplete} remaining`}
           </span>
           <Button
             size="sm"
-            onClick={() => { setIsAddingTask(tab); setNewTaskTitle(""); setNewTaskHours(1); setNewTaskPriority("medium"); setNewTaskSchedule("today"); setNewTaskCategory("work") }}
+            onClick={() => {
+              setIsAddingTask(tab)
+              setNewTaskTitle("")
+              setNewTaskHours(1)
+              setNewTaskPriority("medium")
+              setNewTaskSchedule(tab === "today" ? "today" : "today")
+            }}
             className="bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Plus className="w-4 h-4 mr-1" /> Add Task
           </Button>
         </div>
+
         <div className="space-y-2">
           {isAddingTask === tab && renderAddForm(tab)}
           {displayTasks.length === 0 && isAddingTask !== tab && (
-            <p className="text-foreground/20 text-sm text-center py-8 select-none">No tasks here</p>
+            <p className="text-foreground/30 text-sm text-center py-6">No tasks here</p>
           )}
-          {/* Incomplete first, then completed */}
-          {[...displayTasks.filter(t => !t.isCompleted), ...displayTasks.filter(t => t.isCompleted)]
-            .map((task) => renderTaskCard(task, accentClass))}
+          {displayTasks.map((task) => renderTaskCard(task, accentClass))}
         </div>
       </div>
     )
   }
 
-  // ── tabs config ───────────────────────────────────────────────────────────
-  const tabs: { key: ActiveTab; label: string; icon: React.ReactNode; count: number; activeCls: string }[] = [
-    { key: "today",    label: "Today",    icon: <Sun className="w-4 h-4" />,      count: todayTasks.filter(t=>!t.isCompleted).length,    activeCls: "bg-amber-500/15 text-amber-300 border-amber-500/30" },
-    { key: "work",     label: "Work",     icon: <Briefcase className="w-4 h-4" />, count: workTasks.filter(t=>!t.isCompleted).length,     activeCls: CATEGORY_CONFIG.work.headerBg },
-    { key: "study",    label: "Study",    icon: <BookOpen className="w-4 h-4" />,  count: studyTasks.filter(t=>!t.isCompleted).length,    activeCls: CATEGORY_CONFIG.study.headerBg },
-    { key: "personal", label: "Personal", icon: <Heart className="w-4 h-4" />,     count: personalTasks.filter(t=>!t.isCompleted).length, activeCls: CATEGORY_CONFIG.personal.headerBg },
+  const tabs: { key: ActiveTab; label: string; icon: React.ReactNode; badge?: number; activeCls: string }[] = [
+    {
+      key: "today",
+      label: "Today",
+      icon: <Sun className="w-4 h-4" />,
+      badge: todayTasks.filter(t => !t.isCompleted).length,
+      activeCls: "bg-amber-500/15 text-amber-300 border-amber-500/30",
+    },
+    {
+      key: "work",
+      label: "Work",
+      icon: <Briefcase className="w-4 h-4" />,
+      badge: workTasks.filter(t => !t.isCompleted).length,
+      activeCls: CATEGORY_CONFIG.work.headerBg,
+    },
+    {
+      key: "study",
+      label: "Study",
+      icon: <BookOpen className="w-4 h-4" />,
+      badge: studyTasks.filter(t => !t.isCompleted).length,
+      activeCls: CATEGORY_CONFIG.study.headerBg,
+    },
+    {
+      key: "personal",
+      label: "Personal",
+      icon: <Heart className="w-4 h-4" />,
+      badge: personalTasks.filter(t => !t.isCompleted).length,
+      activeCls: CATEGORY_CONFIG.personal.headerBg,
+    },
   ]
 
   return (
-    <div ref={containerRef} className="min-h-screen hills text-foreground flex flex-col relative">
-      {/* Daily hours badge */}
-      <div className="fixed top-4 left-4 z-50 text-sm bg-primary/20 text-primary-foreground px-3 py-1 rounded-full shadow backdrop-blur">
-        {fmtDailyHours(dailyMinutes)} today
+    <div className="min-h-screen hills text-foreground flex flex-col relative">
+      <div className="fixed top-4 left-4 z-50 text-sm bg-primary/20 text-primary-foreground px-3 py-1 rounded shadow">
+        {formatPseudoHours(dailyMinutes)}h today
       </div>
 
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
-      <header className="glass p-4 text-center font-bold rounded-b-xl mb-4">
+      <header className="glass p-4 text-center text-1xl font-bold rounded-b-xl mb-4">
         Pomodoro Timer
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center px-4 pb-8">
-        <div className="max-w-md w-full space-y-4">
-
+      <main className="flex-1 w-full flex flex-col items-center px-4">
+        <div className="max-w-md w-full">
           {/* Timer Card */}
-          <Card className={`glass border border-border p-6 text-center rounded-2xl transition-all duration-700 ${justFinished ? "ring-2 ring-primary/80 bg-primary/5" : ""}`}>
-            {/* Mode tabs */}
-            <div className="flex justify-center mb-2 gap-1">
+          <Card className="glass border border-border p-8 text-center mb-4 rounded-xl">
+            <div className="flex justify-center mb-4 gap-2">
               {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
-                <Button key={m} variant={mode === m ? "default" : "ghost"} size="sm" onClick={() => handleModeChange(m)}
-                  className={`text-xs px-3 ${mode === m ? "bg-primary text-primary-foreground" : "text-foreground/60 hover:text-foreground hover:bg-foreground/10"}`}>
-                  {MODE_LABELS[m]}
+                <Button
+                  key={m}
+                  variant={mode === m ? "default" : "ghost"}
+                  size="sm"
+                  onClick={() => handleModeChange(m)}
+                  className={mode === m ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-foreground/10"}
+                >
+                  {m.charAt(0).toUpperCase() + m.slice(1)}
                 </Button>
               ))}
             </div>
-
-            {/* Clock with progress ring */}
-            <div className="relative flex items-center justify-center my-4">
-              <ProgressRing progress={progress} size={160} stroke={4} />
-              <span className="absolute text-6xl font-bold font-mono text-foreground tabular-nums">
-                {fmt(timeLeft)}
-              </span>
-            </div>
-
+            <div className="text-9xl font-bold text-foreground mb-6 font-mono">{formatTime(timeLeft)}</div>
             <Button
               onClick={toggleTimer}
               size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 px-14 py-3 text-lg font-semibold rounded-xl shadow-lg"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 px-12 py-3 text-lg font-semibold rounded-lg"
             >
               {isRunning ? "PAUSE" : "START"}
             </Button>
-            <p className="text-foreground/25 text-xs mt-2">press space to toggle</p>
           </Card>
 
-          {/* Selected task indicator */}
           {selectedTask && (
-            <div className="flex items-center justify-center gap-2 text-sm text-primary font-semibold px-2">
-              <span className="opacity-60">{CATEGORY_CONFIG[selectedTask.category].icon}</span>
-              <span className="truncate">@{selectedTask.title}</span>
-              <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0
+            <div className="text-lg text-primary font-bold text-center mb-4 flex items-center justify-center gap-2">
+              {CATEGORY_CONFIG[selectedTask.category].icon}
+              @{selectedTask.title}
+              <span className={`text-xs px-2 py-0.5 rounded-full border ml-1
                 ${selectedTask.schedule === "today"
-                  ? "border-amber-400/40 text-amber-300"
-                  : "border-foreground/15 text-foreground/35"}`}>
+                  ? "border-amber-400/50 text-amber-300"
+                  : "border-foreground/20 text-foreground/40"}`}>
                 {selectedTask.schedule === "today" ? "Today" : "Later"}
               </span>
             </div>
           )}
 
           {/* Tabs */}
-          <div className="grid grid-cols-4 gap-1.5">
-            {tabs.map(({ key, label, icon, count, activeCls }) => (
-              <button key={key} onClick={() => setActiveTab(key)}
-                className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-xl border text-xs font-semibold transition-all duration-150
+          <div className="grid grid-cols-4 gap-1.5 mb-3">
+            {tabs.map(({ key, label, icon, badge, activeCls }) => (
+              <button
+                key={key}
+                onClick={() => setActiveTab(key)}
+                className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg border text-xs font-semibold transition-all
                   ${activeTab === key
-                    ? `${activeCls} border-current shadow-sm`
-                    : "border-border text-foreground/35 hover:text-foreground/60 hover:border-foreground/30"}`}>
+                    ? `${activeCls} border-current`
+                    : "border-border text-foreground/40 hover:text-foreground/70 hover:border-border/70"
+                  }`}
+              >
                 {icon}
-                <span className="hidden sm:block">{label}</span>
-                {count > 0 && (
-                  <span className={`text-xs leading-none rounded-full px-1.5 py-0.5 ${activeTab === key ? "bg-white/20" : "bg-foreground/10"}`}>
-                    {count}
+                <span>{label}</span>
+                {(badge ?? 0) > 0 && (
+                  <span className={`text-xs rounded-full px-1.5 leading-4 ${activeTab === key ? "bg-white/20" : "bg-foreground/10"}`}>
+                    {badge}
                   </span>
                 )}
               </button>
             ))}
           </div>
 
-          {/* Tab content */}
-          {tabs.map(({ key }) => activeTab === key && <div key={key}>{renderTabContent(key)}</div>)}
+          {/* Tab Content */}
+          {tabs.map(({ key }) => activeTab === key && (
+            <div key={key}>{renderTabContent(key)}</div>
+          ))}
         </div>
       </main>
 
-      <footer className="glass text-foreground/60 text-center text-xs p-3 mt-3 rounded-t-xl">
+      <footer className="glass text-foreground text-center p-3 mt-3 rounded-t-xl">
         Made with ❤️ for Doyel
       </footer>
     </div>
