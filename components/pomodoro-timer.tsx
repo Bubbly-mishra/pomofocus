@@ -6,12 +6,12 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, Briefcase, BookOpen } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
 type Priority = "low" | "medium" | "high"
-type Category = "work" | "study"
+type Category = "work" | "study" | "personal"
 
 interface Task {
   id: string
@@ -54,6 +54,12 @@ const CATEGORY_CONFIG: Record<Category, { label: string; icon: React.ReactNode; 
     accent: "ring-purple-400/60",
     headerBg: "bg-purple-500/15 text-purple-300 border-purple-500/30",
   },
+  personal: {
+    label: "Personal",
+    icon: <Heart className="w-4 h-4" />,
+    accent: "ring-pink-400/60",
+    headerBg: "bg-pink-500/15 text-pink-300 border-pink-500/30",
+  },
 }
 
 export function PomodoroTimer() {
@@ -76,6 +82,7 @@ export function PomodoroTimer() {
 
   const workTasks = tasks.filter((t) => t.category === "work")
   const studyTasks = tasks.filter((t) => t.category === "study")
+  const personalTasks = tasks.filter((t) => t.category === "personal")
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60)
@@ -272,7 +279,7 @@ export function PomodoroTimer() {
   const selectedTask = tasks.find((t) => t.id === selectedTaskId)
 
   const renderTaskList = (category: Category) => {
-    const catTasks = category === "work" ? workTasks : studyTasks
+    const catTasks = category === "work" ? workTasks : category === "study" ? studyTasks : personalTasks
     const cfg = CATEGORY_CONFIG[category]
     const isAdding = isAddingTask === category
 
@@ -430,10 +437,10 @@ export function PomodoroTimer() {
 
           {/* Category Tabs */}
           <div className="flex gap-2 mb-3">
-            {(["work", "study"] as Category[]).map((cat) => {
+            {(["work", "study", "personal"] as Category[]).map((cat) => {
               const cfg = CATEGORY_CONFIG[cat]
               const isActive = activeCategory === cat
-              const count = (cat === "work" ? workTasks : studyTasks).filter(t => !t.isCompleted).length
+              const count = (cat === "work" ? workTasks : cat === "study" ? studyTasks : personalTasks).filter(t => !t.isCompleted).length
               return (
                 <button
                   key={cat}
@@ -457,12 +464,12 @@ export function PomodoroTimer() {
           </div>
 
           {/* Active Category Task Panel */}
-          {(["work", "study"] as Category[]).map((cat) => (
+          {(["work", "study", "personal"] as Category[]).map((cat) => (
             activeCategory === cat && (
               <div key={cat} className="space-y-3">
                 <div className="flex items-center justify-between">
                   <h2 className="text-foreground/70 text-sm font-medium">
-                    {workTasks.filter(t=>!t.isCompleted).length + studyTasks.filter(t=>!t.isCompleted).length === 0
+                    {workTasks.filter(t=>!t.isCompleted).length + studyTasks.filter(t=>!t.isCompleted).length + personalTasks.filter(t=>!t.isCompleted).length === 0
                       ? "All done! 🎉"
                       : `${(cat === "work" ? workTasks : studyTasks).filter(t => !t.isCompleted).length} task(s) remaining`}
                   </h2>

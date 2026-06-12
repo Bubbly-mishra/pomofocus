@@ -2,7 +2,7 @@ import { NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
 
 type Priority = "low" | "medium" | "high"
-type Category = "work" | "study"
+type Category = "work" | "study" | "personal"
 
 function toClient(doc: any) {
   return {
@@ -62,7 +62,7 @@ export async function POST(req: Request) {
       ? body.priority
       : "medium"
 
-  const category: Category = body?.category === "study" ? "study" : "work"
+  const category: Category = body?.category === "study" ? "study" : body?.category === "personal" ? "personal" : "work"
 
   const db = await getDb()
   const doc = {

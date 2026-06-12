@@ -37,7 +37,7 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     update.priority = body.priority as Priority
   }
 
-  if (body.category === "work" || body.category === "study") {
+  if (body.category === "work" || body.category === "study" || body.category === "personal") {
     update.category = body.category
   }
 
