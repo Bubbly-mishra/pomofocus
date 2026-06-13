@@ -115,14 +115,31 @@
 
 @layer utilities {
   .hills {
-    background-image: linear-gradient(
-        to bottom,
-        color-mix(in oklab, var(--color-background) 78%, transparent),
-        color-mix(in oklab, var(--color-background) 90%, transparent)
-      ), url("/images/hills.jpg");
+    position: relative;
+  }
+
+  .hills::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background-image: url("/images/hills.jpg");
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+  }
+
+  .hills::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(
+      160deg,
+      color-mix(in oklab, var(--color-background) 55%, transparent) 0%,
+      color-mix(in oklab, var(--color-background) 70%, transparent) 50%,
+      color-mix(in oklab, var(--color-background) 80%, transparent) 100%
+    );
   }
 
   .glass {
