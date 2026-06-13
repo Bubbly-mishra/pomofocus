@@ -31,47 +31,74 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen hills flex items-center justify-center px-4">
-      <Card className="glass border border-border rounded-2xl p-8 flex flex-col items-center gap-5 max-w-sm w-full">
-        <div className="text-5xl">🍅</div>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-1">Pomodoro Timer</h1>
-          <p className="text-foreground/50 text-sm">
-            {mode === "login" ? "Welcome back! Sign in to continue." : "Create your account to get started."}
+    <div className="hills min-h-screen flex flex-col">
+      {/* Header */}
+      <header className="w-full border-b border-white/8 backdrop-blur-md bg-black/20">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">🍅</span>
+            <span className="font-semibold text-foreground tracking-tight">Pomofocus</span>
+          </div>
+          <span className="text-xs font-medium text-foreground/40 uppercase tracking-widest hidden sm:block">
+            Your Focus Companion
+          </span>
+          <div className="w-24" />
+        </div>
+      </header>
+
+      {/* Main */}
+      <main className="flex-1 flex items-center justify-center px-4 py-12">
+        <Card className="glass border border-border rounded-2xl p-8 flex flex-col items-center gap-6 max-w-sm w-full">
+          <div className="text-center">
+            <h1 className="text-2xl font-bold text-foreground mb-1">
+              {mode === "login" ? "Welcome back" : "Create account"}
+            </h1>
+            <p className="text-foreground/45 text-sm">
+              {mode === "login" ? "Sign in to continue your sessions." : "Pick a username to get started."}
+            </p>
+          </div>
+
+          <div className="w-full flex flex-col gap-3">
+            <Input
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+              autoFocus
+            />
+            <Input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && submit()}
+            />
+            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
+            <Button onClick={submit} disabled={loading} className="w-full font-semibold py-5 rounded-xl mt-1">
+              {loading ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
+            </Button>
+          </div>
+
+          <p className="text-foreground/40 text-sm">
+            {mode === "login" ? "New here? " : "Already have an account? "}
+            <button
+              onClick={() => { setMode(mode === "login" ? "register" : "login"); setError("") }}
+              className="text-primary hover:underline font-medium"
+            >
+              {mode === "login" ? "Sign Up" : "Sign In"}
+            </button>
           </p>
-        </div>
+        </Card>
+      </main>
 
-        <div className="w-full flex flex-col gap-3">
-          <Input
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-            autoFocus
-          />
-          <Input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && submit()}
-          />
-          {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-          <Button onClick={submit} disabled={loading} className="w-full font-semibold py-3 rounded-xl">
-            {loading ? "..." : mode === "login" ? "Sign In" : "Create Account"}
-          </Button>
+      {/* Footer */}
+      <footer className="w-full border-t border-white/8 backdrop-blur-md bg-black/20">
+        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
+          <span className="text-xs text-foreground/30">© {new Date().getFullYear()} Pomofocus</span>
+          <span className="text-xs text-foreground/25">Made with ❤️ for Doyel</span>
+          <span className="text-xs text-foreground/30">Stay focused.</span>
         </div>
-
-        <p className="text-foreground/40 text-sm">
-          {mode === "login" ? "Don't have an account? " : "Already have an account? "}
-          <button
-            onClick={() => { setMode(mode === "login" ? "register" : "login"); setError("") }}
-            className="text-primary hover:underline font-medium"
-          >
-            {mode === "login" ? "Sign Up" : "Sign In"}
-          </button>
-        </p>
-      </Card>
+      </footer>
     </div>
   )
 }

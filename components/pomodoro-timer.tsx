@@ -39,6 +39,12 @@ const TIMER_DURATIONS = {
   longBreak: 30 * 60,
 }
 
+const MODE_LABELS: Record<TimerMode, string> = {
+  pomodoro: "Focus Session",
+  shortBreak: "Short Break",
+  longBreak: "Long Break",
+}
+
 const PRIORITY_COLOR: Record<Priority, string> = {
   high: "bg-red-500",
   medium: "bg-yellow-400",
@@ -563,11 +569,24 @@ export function PomodoroTimer({ username }: { username: string }) {
 
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
-      <header className="glass p-4 text-center text-1xl font-bold rounded-b-xl mb-4">
-        Pomodoro Timer
+      {/* Header */}
+      <header className="sticky top-0 z-30 w-full border-b border-white/8 backdrop-blur-md bg-black/20">
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
+          {/* Logo */}
+          <div className="flex items-center gap-2.5">
+            <span className="text-xl">🍅</span>
+            <span className="font-semibold text-foreground tracking-tight">Pomofocus</span>
+          </div>
+          {/* Center — mode indicator */}
+          <span className="text-xs font-medium text-foreground/40 uppercase tracking-widest hidden sm:block">
+            {MODE_LABELS[mode]}
+          </span>
+          {/* Right — spacer to balance profile button on left */}
+          <div className="w-24" />
+        </div>
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center px-4">
+      <main className="flex-1 w-full flex flex-col items-center px-4 py-6">
         <div className="max-w-md w-full">
           {/* Timer Card */}
           <Card className="glass border border-border p-8 text-center mb-4 rounded-xl">
@@ -637,8 +656,13 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
       </main>
 
-      <footer className="glass text-foreground text-center p-3 mt-3 rounded-t-xl">
-        Made with ❤️ for Doyel
+      {/* Footer */}
+      <footer className="w-full border-t border-white/8 backdrop-blur-md bg-black/20 mt-auto">
+        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
+          <span className="text-xs text-foreground/30">© {new Date().getFullYear()} Pomofocus</span>
+          <span className="text-xs text-foreground/25">Made with ❤️ for Doyel</span>
+          <span className="text-xs text-foreground/30">Stay focused.</span>
+        </div>
       </footer>
     </div>
   )
