@@ -134,7 +134,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const displayTasks  = tabTasks(activeTab)
   const selectedTask  = tasks.find(t => t.id === selectedTaskId)
   const totalDuration = DURATIONS[mode]
-  const R = 108, STROKE = 6, CIRC = 2 * Math.PI * R
+  const R = 88, STROKE = 5, CIRC = 2 * Math.PI * R
   const ringOffset = CIRC * (timeLeft / totalDuration)
 
   // ── timer ──────────────────────────────────────────────────────────────────
@@ -316,10 +316,10 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="w-full lg:w-1/2 lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col gap-4 lg:py-4">
 
           {/* Timer card */}
-          <div className="glass rounded-3xl p-8 flex flex-col items-center text-center flex-1 justify-center">
+          <div className="glass rounded-3xl p-6 flex flex-col items-center text-center flex-1 justify-center">
 
             {/* Mode pills */}
-            <div className="flex gap-1 mb-8 bg-black/25 rounded-full p-1 border border-white/8">
+            <div className="flex gap-1 mb-6 bg-black/25 rounded-full p-1 border border-white/8">
               {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
                 <button
                   key={m}
@@ -335,18 +335,18 @@ export function PomodoroTimer({ username }: { username: string }) {
             </div>
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-8" style={{ width: 240, height: 240 }}>
-              <svg width={240} height={240} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
-                <circle cx={120} cy={120} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/10" />
+            <div className="relative flex items-center justify-center mb-6" style={{ width: 200, height: 200 }}>
+              <svg width={200} height={200} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+                <circle cx={100} cy={100} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/10" />
                 <circle
-                  cx={120} cy={120} r={R}
+                  cx={100} cy={100} r={R}
                   fill="none" stroke="currentColor" strokeWidth={STROKE}
                   strokeDasharray={CIRC} strokeDashoffset={ringOffset}
                   strokeLinecap="round"
                   className="text-primary transition-all duration-1000 ease-linear"
                 />
               </svg>
-              <span className="text-6xl font-bold font-mono tabular-nums tracking-tighter text-foreground relative z-10">
+              <span className="text-5xl font-bold font-mono tabular-nums tracking-tighter text-foreground relative z-10">
                 {fmtTime(timeLeft)}
               </span>
             </div>
@@ -355,7 +355,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             <button
               onClick={toggleTimer}
               className={[
-                "w-full py-4 rounded-2xl text-base font-bold tracking-widest uppercase transition-all shadow-lg mb-2",
+                "w-full py-3.5 rounded-2xl text-base font-bold tracking-widest uppercase transition-all shadow-lg mb-2",
                 isRunning
                   ? "bg-white/10 border border-white/20 text-foreground hover:bg-white/15"
                   : "bg-primary text-primary-foreground hover:brightness-110",
