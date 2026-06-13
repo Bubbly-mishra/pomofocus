@@ -571,18 +571,8 @@ export function PomodoroTimer({ username }: { username: string }) {
 
       {/* Header */}
       <header className="sticky top-0 z-30 w-full border-b border-white/8 backdrop-blur-md bg-black/20">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          {/* Logo */}
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🍅</span>
-            <span className="font-semibold text-foreground tracking-tight">Pomofocus</span>
-          </div>
-          {/* Center — mode indicator */}
-          <span className="text-xs font-medium text-foreground/40 uppercase tracking-widest hidden sm:block">
-            {MODE_LABELS[mode]}
-          </span>
-          {/* Right — spacer to balance profile button on left */}
-          <div className="w-24" />
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-center">
+          <span className="font-semibold text-foreground tracking-tight">Pomofocus</span>
         </div>
       </header>
 

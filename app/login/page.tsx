@@ -34,15 +34,8 @@ export default function LoginPage() {
     <div className="hills min-h-screen flex flex-col">
       {/* Header */}
       <header className="w-full border-b border-white/8 backdrop-blur-md bg-black/20">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <span className="text-xl">🍅</span>
-            <span className="font-semibold text-foreground tracking-tight">Pomofocus</span>
-          </div>
-          <span className="text-xs font-medium text-foreground/40 uppercase tracking-widest hidden sm:block">
-            Your Focus Companion
-          </span>
-          <div className="w-24" />
+        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-center">
+          <span className="font-semibold text-foreground tracking-tight">Pomofocus</span>
         </div>
       </header>
 
