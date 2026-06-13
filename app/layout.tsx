@@ -5,8 +5,8 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Pomodoro Timer',
-  description: 'Stay focused with Pomodoro — track tasks across Work, Study & Personal.',
+  title: 'Flowtime',
+  description: 'Deep work, done right. — track tasks across Work, Study & Personal.',
   icons: { icon: '/clock.png' },
 }
 
