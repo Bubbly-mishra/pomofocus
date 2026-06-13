@@ -252,7 +252,7 @@ export function PomodoroTimer({ username }: { username: string }) {
 
   const signOut = async () => {
     await fetch("/api/auth/logout", { method: "POST" })
-    router.push("/login"); router.refresh()
+    window.location.href = "/login"
   }
 
   // ── render ─────────────────────────────────────────────────────────────────
@@ -261,47 +261,60 @@ export function PomodoroTimer({ username }: { username: string }) {
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-white/10 backdrop-blur-md bg-black/40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      <header className="sticky top-0 z-30 border-b border-white/8">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
 
-          {/* Profile button */}
+          {/* Profile */}
           <div className="relative">
             <button
               onClick={() => setShowProfile(p => !p)}
-              className="flex items-center gap-2 bg-white/10 hover:bg-white/15 border border-white/15 rounded-full pl-1.5 pr-3 py-1 transition-all"
+              className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
             >
-              <div className="w-7 h-7 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
+              <div className="w-8 h-8 rounded-full bg-primary/90 flex items-center justify-center text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 ring-2 ring-primary/30">
                 {username[0].toUpperCase()}
               </div>
-              <span className="text-sm text-foreground/80 font-medium hidden sm:block">{username}</span>
+              <span className="text-sm text-foreground/70 font-medium hidden sm:block">{username}</span>
             </button>
 
             {showProfile && (
-              <div className="absolute top-11 left-0 w-56 glass rounded-2xl shadow-2xl p-4 flex flex-col gap-3 z-50">
+              <div className="absolute top-12 left-0 w-60 glass rounded-2xl p-5 flex flex-col gap-4 z-50">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-base font-bold text-primary-foreground">
+                  <div className="w-11 h-11 rounded-full bg-primary/80 flex items-center justify-center text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
                     {username[0].toUpperCase()}
                   </div>
                   <div>
-                    <p className="text-sm font-semibold">{username}</p>
-                    <p className="text-xs text-foreground/40">DeepWork</p>
+                    <p className="text-sm font-semibold text-foreground">{username}</p>
+                    <p className="text-xs text-foreground/40 mt-0.5">DeepWork</p>
                   </div>
                 </div>
-                <div className="border-t border-border/40 pt-2">
-                  <p className="text-xs text-foreground/40 mb-0.5">Today&#39;s focus</p>
-                  <p className="text-xl font-bold text-primary">{fmtFocus(dailyMinutes)}</p>
+                <div className="h-px bg-white/8" />
+                <div>
+                  <p className="text-xs text-foreground/40 mb-1">Today&apos;s focus</p>
+                  <p className="text-2xl font-bold text-primary">{fmtFocus(dailyMinutes)}</p>
                 </div>
-                <button onClick={signOut} className="flex items-center gap-2 text-sm text-destructive/80 hover:text-destructive transition-colors">
-                  <LogOut className="w-4 h-4" /> Sign out
+                <button
+                  onClick={signOut}
+                  className="flex items-center gap-2 text-sm text-foreground/50 hover:text-destructive transition-colors group"
+                >
+                  <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                  Sign out
                 </button>
               </div>
             )}
           </div>
 
-          <span className="font-bold text-lg tracking-tight">DeepWork</span>
+          {/* Brand */}
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
+              DeepWork
+            </span>
+            <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 -mt-0.5 hidden sm:block">Focus · Flow · Finish</span>
+          </div>
 
+          {/* Today */}
           <div className="text-right">
-            <p className="text-xs text-foreground/40 leading-none mb-0.5">Today</p>
+            <p className="text-xs text-foreground/35 leading-none mb-0.5 tracking-wide uppercase">Today</p>
             <p className="text-sm font-bold text-primary">{fmtFocus(dailyMinutes)}</p>
           </div>
         </div>
@@ -554,11 +567,12 @@ export function PomodoroTimer({ username }: { username: string }) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-white/8 backdrop-blur-md bg-black/25">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
-          <span className="text-xs text-foreground/25">© {new Date().getFullYear()} DeepWork</span>
+      <footer className="relative border-t border-white/8 mt-auto">
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-xl" />
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
+          <span className="text-xs text-foreground/25 tracking-wide">© {new Date().getFullYear()} DeepWork</span>
           <span className="text-xs text-foreground/20">Made with ❤️ for Doyel</span>
-          <span className="text-xs text-foreground/25">Stay focused.</span>
+          <span className="text-xs text-foreground/25 tracking-widest uppercase">Stay focused.</span>
         </div>
       </footer>
     </div>

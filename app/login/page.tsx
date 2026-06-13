@@ -2,9 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -26,70 +24,92 @@ export default function LoginPage() {
     const data = await res.json()
     setLoading(false)
     if (!res.ok) { setError(data.error); return }
-    router.replace("/")
-    router.refresh()
+    window.location.href = "/"
   }
 
   return (
     <div className="hills min-h-screen flex flex-col">
+
       {/* Header */}
-      <header className="w-full border-b border-white/8 backdrop-blur-md bg-black/20">
-        <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-center">
-          <span className="font-semibold text-foreground tracking-tight">DeepWork</span>
+      <header className="sticky top-0 z-30 border-b border-white/8">
+        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
+        <div className="relative max-w-7xl mx-auto px-6 h-14 flex items-center justify-center">
+          <div className="flex flex-col items-center">
+            <span className="text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
+              DeepWork
+            </span>
+            <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 -mt-0.5">Focus · Flow · Finish</span>
+          </div>
         </div>
       </header>
 
       {/* Main */}
       <main className="flex-1 flex items-center justify-center px-4 py-12">
-        <Card className="glass border border-border rounded-2xl p-8 flex flex-col items-center gap-6 max-w-sm w-full">
+        <div className="glass rounded-3xl p-8 flex flex-col gap-6 w-full max-w-sm">
+
+          {/* Icon + title */}
           <div className="text-center">
-            <h1 className="text-2xl font-bold text-foreground mb-1">
+            <div className="w-14 h-14 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/10">
+              <span className="text-2xl">⏱</span>
+            </div>
+            <h1 className="text-xl font-bold text-foreground mb-1">
               {mode === "login" ? "Welcome back" : "Create account"}
             </h1>
-            <p className="text-foreground/45 text-sm">
-              {mode === "login" ? "Sign in to continue your sessions." : "Pick a username to get started."}
+            <p className="text-foreground/40 text-sm">
+              {mode === "login" ? "Sign in to your workspace." : "Choose a username to get started."}
             </p>
           </div>
 
-          <div className="w-full flex flex-col gap-3">
+          {/* Form */}
+          <div className="flex flex-col gap-3">
             <Input
               placeholder="Username"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
+              onChange={e => setUsername(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && submit()}
               autoFocus
+              className="bg-black/20 border-white/12 placeholder:text-foreground/30 h-11"
             />
             <Input
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && submit()}
+              onChange={e => setPassword(e.target.value)}
+              onKeyDown={e => e.key === "Enter" && submit()}
+              className="bg-black/20 border-white/12 placeholder:text-foreground/30 h-11"
             />
-            {error && <p className="text-red-400 text-sm text-center">{error}</p>}
-            <Button onClick={submit} disabled={loading} className="w-full font-semibold py-5 rounded-xl mt-1">
+            {error && (
+              <p className="text-red-400 text-xs text-center bg-red-400/10 border border-red-400/20 rounded-lg py-2 px-3">{error}</p>
+            )}
+            <button
+              onClick={submit}
+              disabled={loading}
+              className="w-full h-11 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:brightness-110 transition-all disabled:opacity-50 shadow-lg shadow-primary/20 mt-1"
+            >
               {loading ? "Please wait…" : mode === "login" ? "Sign In" : "Create Account"}
-            </Button>
+            </button>
           </div>
 
-          <p className="text-foreground/40 text-sm">
+          {/* Toggle */}
+          <p className="text-foreground/40 text-sm text-center">
             {mode === "login" ? "New here? " : "Already have an account? "}
             <button
               onClick={() => { setMode(mode === "login" ? "register" : "login"); setError("") }}
-              className="text-primary hover:underline font-medium"
+              className="text-primary hover:text-primary/80 font-semibold transition-colors"
             >
               {mode === "login" ? "Sign Up" : "Sign In"}
             </button>
           </p>
-        </Card>
+        </div>
       </main>
 
       {/* Footer */}
-      <footer className="w-full border-t border-white/8 backdrop-blur-md bg-black/20">
-        <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
-          <span className="text-xs text-foreground/30">© {new Date().getFullYear()} DeepWork</span>
-          <span className="text-xs text-foreground/25">Made with ❤️ for Doyel</span>
-          <span className="text-xs text-foreground/30">Stay focused.</span>
+      <footer className="relative border-t border-white/8">
+        <div className="absolute inset-0 bg-black/30 backdrop-blur-xl" />
+        <div className="relative max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
+          <span className="text-xs text-foreground/25">© {new Date().getFullYear()} DeepWork</span>
+          <span className="text-xs text-foreground/20">Made with ❤️ for Doyel</span>
+          <span className="text-xs text-foreground/25 tracking-widest uppercase">Stay focused.</span>
         </div>
       </footer>
     </div>
