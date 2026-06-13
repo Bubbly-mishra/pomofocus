@@ -134,7 +134,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const displayTasks  = tabTasks(activeTab)
   const selectedTask  = tasks.find(t => t.id === selectedTaskId)
   const totalDuration = DURATIONS[mode]
-  const R = 108, STROKE = 6, CIRC = 2 * Math.PI * R
+  const R = 98, STROKE = 5, CIRC = 2 * Math.PI * R
   const ringOffset = CIRC * (timeLeft / totalDuration)
 
   // ── timer ──────────────────────────────────────────────────────────────────
@@ -323,16 +323,16 @@ export function PomodoroTimer({ username }: { username: string }) {
       {showProfile && <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />}
 
       {/* Body */}
-      <main className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto px-4 sm:px-6 py-6 gap-6">
+      <main className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 gap-4">
 
         {/* LEFT — Timer sticky on desktop */}
-        <div className="w-full lg:w-1/2 lg:sticky lg:top-14 lg:self-start flex flex-col gap-4 lg:py-4">
+        <div className="w-full lg:w-1/2 lg:sticky lg:top-14 lg:self-start flex flex-col gap-3 lg:py-2">
 
-          {/* Timer card — natural height, not stretched */}
-          <div className="glass rounded-3xl p-8 flex flex-col items-center text-center">
+          {/* Timer card */}
+          <div className="glass rounded-3xl px-8 py-6 flex flex-col items-center text-center">
 
             {/* Mode pills */}
-            <div className="flex gap-1 mb-8 bg-black/25 rounded-full p-1 border border-white/8">
+            <div className="flex gap-1 mb-5 bg-black/25 rounded-full p-1 border border-white/8">
               {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
                 <button
                   key={m}
@@ -348,11 +348,11 @@ export function PomodoroTimer({ username }: { username: string }) {
             </div>
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-8" style={{ width: 240, height: 240 }}>
-              <svg width={240} height={240} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
-                <circle cx={120} cy={120} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/10" />
+            <div className="relative flex items-center justify-center mb-5" style={{ width: 220, height: 220 }}>
+              <svg width={220} height={220} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+                <circle cx={110} cy={110} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/10" />
                 <circle
-                  cx={120} cy={120} r={R}
+                  cx={110} cy={110} r={R}
                   fill="none" stroke="currentColor" strokeWidth={STROKE}
                   strokeDasharray={CIRC} strokeDashoffset={ringOffset}
                   strokeLinecap="round"
@@ -368,7 +368,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             <button
               onClick={toggleTimer}
               className={[
-                "w-full py-4 rounded-2xl text-base font-bold tracking-widest uppercase transition-all shadow-lg mb-2",
+                "w-full py-3.5 rounded-2xl text-sm font-bold tracking-widest uppercase transition-all shadow-lg mb-1.5",
                 isRunning
                   ? "bg-white/10 border border-white/20 text-foreground hover:bg-white/15"
                   : "bg-primary text-primary-foreground hover:brightness-110",
@@ -399,7 +399,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* RIGHT — Tasks */}
-        <div className="w-full lg:w-1/2 flex flex-col gap-3 min-w-0">
+        <div className="w-full lg:w-1/2 flex flex-col gap-2.5 min-w-0">
 
           {/* Tab bar */}
           <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
@@ -431,7 +431,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="glass rounded-3xl flex flex-col overflow-hidden">
 
             {/* Panel header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
               <div>
                 <h2 className="font-semibold text-foreground text-base">{TAB_LABEL[activeTab]}</h2>
                 <p className="text-xs text-foreground/40 mt-0.5">
@@ -485,7 +485,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             )}
 
             {/* Task list */}
-            <div className="px-4 py-3 space-y-2">
+            <div className="px-3 py-2.5 space-y-1.5">
               {displayTasks.length === 0 && !isAddingTask && (
                 <div className="flex flex-col items-center justify-center py-16 text-foreground/20">
                   <p className="text-4xl mb-2">✓</p>
@@ -506,7 +506,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                     key={task.id}
                     onClick={() => setSelectedTaskId(isSelected ? null : task.id)}
                     className={[
-                      "flex flex-col gap-2.5 p-4 rounded-2xl border cursor-pointer transition-all",
+                      "flex flex-col gap-2 p-3 rounded-xl border cursor-pointer transition-all",
                       isSelected ? CAT_ACCENT[task.category] + " shadow-sm" : "border-border/40 bg-black/20 hover:bg-black/30 hover:border-border/60",
                       task.isCompleted ? "opacity-40" : "",
                     ].join(" ")}
@@ -552,7 +552,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                         )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 pl-8">
+                    <div className="flex items-center gap-2 pl-7">
                       <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
                         <div className="h-full rounded-full bg-primary/60 transition-all duration-500" style={{ width: `${pct * 100}%` }} />
                       </div>
