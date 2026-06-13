@@ -1,16 +1,9 @@
+import { redirect } from "next/navigation"
+import { getSession } from "@/lib/auth"
 import { PomodoroTimer } from "@/components/pomodoro-timer"
 
-export const metadata = {
-  title: "Pomodoro Timer",
-  icons: {
-    icon: "/clock.png", // just the path from public/
-  },
-}
-
-export default function Home() {
-  return (
-    <main className="min-h-screen bg-background">
-      <PomodoroTimer />
-    </main>
-  )
+export default async function Home() {
+  const session = await getSession()
+  if (!session) redirect("/login")
+  return <PomodoroTimer />
 }

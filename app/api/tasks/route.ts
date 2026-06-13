@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
+import { getSession } from "@/lib/auth"
 
 type Priority = "low" | "medium" | "high"
 type Category = "work" | "study" | "personal"
@@ -20,59 +21,41 @@ function toClient(doc: any) {
 }
 
 export async function GET() {
+  const session = await getSession()
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = (session.user as any).id
+
   const db = await getDb()
-  const items = await db
-    .collection("tasks")
-    .aggregate([
-      {
-        $addFields: {
-          priorityOrder: {
-            $switch: {
-              branches: [
-                { case: { $eq: ["$priority", "high"] }, then: 1 },
-                { case: { $eq: ["$priority", "medium"] }, then: 2 },
-                { case: { $eq: ["$priority", "low"] }, then: 3 },
-              ],
-              default: 2,
-            },
-          },
-        },
-      },
-      { $sort: { priorityOrder: 1, createdAt: 1 } },
-    ])
-    .toArray()
+  const items = await db.collection("tasks").aggregate([
+    { $match: { userId } },
+    { $addFields: { priorityOrder: { $switch: { branches: [
+      { case: { $eq: ["$priority", "high"] }, then: 1 },
+      { case: { $eq: ["$priority", "medium"] }, then: 2 },
+      { case: { $eq: ["$priority", "low"] }, then: 3 },
+    ], default: 2 } } } },
+    { $sort: { priorityOrder: 1, createdAt: 1 } },
+  ]).toArray()
+
   return NextResponse.json(items.map(toClient))
 }
 
 export async function POST(req: Request) {
+  const session = await getSession()
+  if (!session?.user) return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+  const userId = (session.user as any).id
+
   const body = await req.json().catch(() => ({}))
   const title = String(body?.title || "").trim()
   if (!title) return NextResponse.json({ error: "Title is required" }, { status: 400 })
 
   const rawHours = Number(body?.targetHours)
   const targetMinutes = Number.isFinite(rawHours) ? Math.max(0, Math.round(rawHours * 60)) : 60
-
-  const priority: Priority =
-    body?.priority === "low" || body?.priority === "high" || body?.priority === "medium"
-      ? body.priority : "medium"
-
-  const category: Category =
-    body?.category === "study" ? "study" : body?.category === "personal" ? "personal" : "work"
-
+  const priority: Priority = ["low","medium","high"].includes(body?.priority) ? body.priority : "medium"
+  const category: Category = body?.category === "study" ? "study" : body?.category === "personal" ? "personal" : "work"
   const schedule: Schedule = body?.schedule === "today" ? "today" : "later"
 
   const db = await getDb()
-  const doc = {
-    title,
-    isCompleted: false,
-    createdAt: new Date(),
-    targetMinutes,
-    remainingMinutes: 0,
-    priority,
-    category,
-    schedule,
-  }
-
+  const doc = { userId, title, isCompleted: false, createdAt: new Date(), targetMinutes, remainingMinutes: 0, priority, category, schedule }
   const res = await db.collection("tasks").insertOne(doc)
   return NextResponse.json(toClient({ _id: res.insertedId, ...doc }), { status: 201 })
 }

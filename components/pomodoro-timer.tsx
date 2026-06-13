@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut } from "lucide-react"
+import { useSession, signOut } from "next-auth/react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -82,6 +83,10 @@ export function PomodoroTimer() {
   const [dailyMinutes, setDailyMinutes] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
+
+  const { data: session } = useSession()
+  const user = session?.user
+  const [showProfile, setShowProfile] = useState(false)
 
   const fetcher = useCallback((url: string) => fetch(url).then((r) => r.json()), [])
   const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
@@ -515,9 +520,54 @@ export function PomodoroTimer() {
 
   return (
     <div className="min-h-screen hills text-foreground flex flex-col relative">
-      <div className="fixed top-4 left-4 z-50 text-sm bg-primary/20 text-primary-foreground px-3 py-1 rounded shadow">
-        {formatPseudoHours(dailyMinutes)}h today
+      {/* Profile button top-left */}
+      <div className="fixed top-4 left-4 z-50">
+        <button
+          onClick={() => setShowProfile((p) => !p)}
+          className="flex items-center gap-2 bg-black/30 hover:bg-black/50 backdrop-blur border border-white/10 rounded-full pl-1 pr-3 py-1 transition-all"
+        >
+          {user?.image ? (
+            <img src={user.image} alt={user.name ?? ""} className="w-7 h-7 rounded-full object-cover" />
+          ) : (
+            <div className="w-7 h-7 rounded-full bg-primary/60 flex items-center justify-center text-xs font-bold text-white">
+              {user?.name?.[0]?.toUpperCase() ?? "?"}
+            </div>
+          )}
+          <span className="text-xs text-white/80 font-medium max-w-[100px] truncate hidden sm:block">
+            {user?.name?.split(" ")[0]}
+          </span>
+        </button>
+
+        {showProfile && (
+          <div className="absolute top-10 left-0 mt-1 w-60 glass border border-border rounded-2xl shadow-xl p-4 flex flex-col gap-3">
+            <div className="flex items-center gap-3">
+              {user?.image ? (
+                <img src={user.image} alt={user.name ?? ""} className="w-10 h-10 rounded-full object-cover" />
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-primary/60 flex items-center justify-center text-sm font-bold text-white">
+                  {user?.name?.[0]?.toUpperCase() ?? "?"}
+                </div>
+              )}
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground truncate">{user?.name}</p>
+                <p className="text-xs text-foreground/50 truncate">{user?.email}</p>
+              </div>
+            </div>
+            <div className="border-t border-border/50 pt-2">
+              <p className="text-xs text-foreground/40 mb-1">Today's focus</p>
+              <p className="text-lg font-bold text-primary">{formatPseudoHours(dailyMinutes)}h</p>
+            </div>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              className="flex items-center gap-2 text-sm text-destructive/80 hover:text-destructive transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              Sign out
+            </button>
+          </div>
+        )}
       </div>
+      {showProfile && <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />}
 
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
