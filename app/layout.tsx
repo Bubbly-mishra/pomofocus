@@ -5,7 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'Flowtime',
+  title: 'DeepWork',
   description: 'Deep work, done right. — track tasks across Work, Study & Personal.',
   icons: { icon: '/clock.png' },
 }

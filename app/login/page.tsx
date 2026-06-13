@@ -35,7 +35,7 @@ export default function LoginPage() {
       {/* Header */}
       <header className="w-full border-b border-white/8 backdrop-blur-md bg-black/20">
         <div className="max-w-5xl mx-auto px-4 h-14 flex items-center justify-center">
-          <span className="font-semibold text-foreground tracking-tight">Flowtime</span>
+          <span className="font-semibold text-foreground tracking-tight">DeepWork</span>
         </div>
       </header>
 
@@ -87,7 +87,7 @@ export default function LoginPage() {
       {/* Footer */}
       <footer className="w-full border-t border-white/8 backdrop-blur-md bg-black/20">
         <div className="max-w-5xl mx-auto px-4 h-12 flex items-center justify-between">
-          <span className="text-xs text-foreground/30">© {new Date().getFullYear()} Flowtime</span>
+          <span className="text-xs text-foreground/30">© {new Date().getFullYear()} DeepWork</span>
           <span className="text-xs text-foreground/25">Made with ❤️ for Doyel</span>
           <span className="text-xs text-foreground/30">Stay focused.</span>
         </div>
