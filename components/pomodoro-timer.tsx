@@ -327,7 +327,7 @@ export function PomodoroTimer({ username }: { username: string }) {
     return (
       <Card
         key={task.id}
-        className={`glass border border-border p-3 rounded-lg cursor-pointer transition
+        className={`glass border border-border p-4 rounded-xl cursor-pointer transition
           ${isSelected ? `ring-2 ${accentClass} bg-primary/10` : "hover:ring-1 hover:ring-primary/20"}`}
         onClick={() => setSelectedTaskId(task.id)}
       >
@@ -480,7 +480,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           </Button>
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-3">
           {isAddingTask === tab && renderAddForm(tab)}
           {displayTasks.length === 0 && isAddingTask !== tab && (
             <p className="text-foreground/30 text-sm text-center py-6">No tasks here</p>
@@ -576,62 +576,78 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
       </header>
 
-      <main className="flex-1 w-full flex flex-col items-center px-4 py-6">
-        <div className="max-w-md w-full">
+      <main className="flex-1 w-full flex flex-col items-center px-4 py-8">
+        <div className="max-w-xl w-full space-y-5">
+
           {/* Timer Card */}
-          <Card className="glass border border-border p-8 text-center mb-4 rounded-xl">
-            <div className="flex justify-center mb-4 gap-2">
+          <Card className="glass border border-border rounded-2xl px-8 pt-8 pb-10 text-center">
+            {/* Mode pills */}
+            <div className="flex justify-center gap-2 mb-8">
               {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map((m) => (
-                <Button
+                <button
                   key={m}
-                  variant={mode === m ? "default" : "ghost"}
-                  size="sm"
                   onClick={() => handleModeChange(m)}
-                  className={mode === m ? "bg-primary text-primary-foreground" : "text-foreground hover:bg-foreground/10"}
+                  className={`px-4 py-1.5 rounded-full text-sm font-medium transition-all
+                    ${mode === m
+                      ? "bg-primary/20 text-primary border border-primary/40"
+                      : "text-foreground/40 hover:text-foreground/70 border border-transparent hover:border-border"
+                    }`}
                 >
-                  {m.charAt(0).toUpperCase() + m.slice(1)}
-                </Button>
+                  {MODE_LABELS[m]}
+                </button>
               ))}
             </div>
-            <div className="text-9xl font-bold text-foreground mb-6 font-mono">{formatTime(timeLeft)}</div>
-            <Button
+
+            {/* Clock */}
+            <div className="text-[7rem] leading-none font-bold text-foreground font-mono tabular-nums tracking-tight mb-8">
+              {formatTime(timeLeft)}
+            </div>
+
+            {/* Start button */}
+            <button
               onClick={toggleTimer}
-              size="lg"
-              className="bg-primary text-primary-foreground hover:bg-primary/90 px-12 py-3 text-lg font-semibold rounded-lg"
+              className={`w-full max-w-xs mx-auto flex items-center justify-center py-4 rounded-2xl text-lg font-bold tracking-widest uppercase transition-all shadow-lg
+                ${isRunning
+                  ? "bg-foreground/10 border border-foreground/20 text-foreground hover:bg-foreground/15"
+                  : "bg-primary text-primary-foreground hover:bg-primary/90"
+                }`}
             >
-              {isRunning ? "PAUSE" : "START"}
-            </Button>
+              {isRunning ? "Pause" : "Start"}
+            </button>
+
+            <p className="text-foreground/20 text-xs mt-3">Press Space to toggle</p>
           </Card>
 
+          {/* Active task indicator */}
           {selectedTask && (
-            <div className="text-lg text-primary font-bold text-center mb-4 flex items-center justify-center gap-2">
-              {CATEGORY_CONFIG[selectedTask.category].icon}
-              @{selectedTask.title}
-              <span className={`text-xs px-2 py-0.5 rounded-full border ml-1
+            <div className="flex items-center justify-center gap-2 text-sm text-primary/80 font-medium px-2">
+              <span className="opacity-60 shrink-0">{CATEGORY_CONFIG[selectedTask.category].icon}</span>
+              <span className="truncate">Working on: <span className="font-semibold text-primary">{selectedTask.title}</span></span>
+              <span className={`text-xs px-2 py-0.5 rounded-full border shrink-0
                 ${selectedTask.schedule === "today"
-                  ? "border-amber-400/50 text-amber-300"
-                  : "border-foreground/20 text-foreground/40"}`}>
+                  ? "border-amber-400/40 text-amber-300"
+                  : "border-foreground/15 text-foreground/35"}`}>
                 {selectedTask.schedule === "today" ? "Today" : "Later"}
               </span>
             </div>
           )}
 
-          {/* Tabs */}
-          <div className="grid grid-cols-4 gap-1.5 mb-3">
+          {/* Category Tabs */}
+          <div className="grid grid-cols-4 gap-2">
             {tabs.map(({ key, label, icon, badge, activeCls }) => (
               <button
                 key={key}
                 onClick={() => setActiveTab(key)}
-                className={`flex flex-col items-center justify-center gap-1 py-2 px-1 rounded-lg border text-xs font-semibold transition-all
+                className={`flex flex-col items-center justify-center gap-1.5 py-3 px-2 rounded-xl border text-xs font-semibold transition-all
                   ${activeTab === key
-                    ? `${activeCls} border-current`
-                    : "border-border text-foreground/40 hover:text-foreground/70 hover:border-border/70"
+                    ? `${activeCls} border-current shadow-sm`
+                    : "border-border/50 text-foreground/35 hover:text-foreground/60 hover:border-border"
                   }`}
               >
-                {icon}
-                <span>{label}</span>
+                <span className="[&_svg]:w-5 [&_svg]:h-5">{icon}</span>
+                <span className="text-xs">{label}</span>
                 {(badge ?? 0) > 0 && (
-                  <span className={`text-xs rounded-full px-1.5 leading-4 ${activeTab === key ? "bg-white/20" : "bg-foreground/10"}`}>
+                  <span className={`text-xs leading-none rounded-full px-2 py-0.5 ${activeTab === key ? "bg-white/20" : "bg-foreground/10"}`}>
                     {badge}
                   </span>
                 )}
@@ -643,6 +659,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           {tabs.map(({ key }) => activeTab === key && (
             <div key={key}>{renderTabContent(key)}</div>
           ))}
+
         </div>
       </main>
 
