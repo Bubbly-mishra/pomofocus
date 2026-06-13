@@ -12,8 +12,8 @@
   --popover:       oklch(0.17 0.04 235);
   --popover-foreground: var(--foreground);
 
-  /* Accent: warm gold — energy, focus, warmth against dark blue */
-  --primary:           oklch(0.82 0.14 75);
+  /* Accent: emerald green — calm energy, focus, pairs beautifully with dark blue */
+  --primary:           oklch(0.72 0.17 158);
   --primary-foreground: oklch(0.13 0.04 240);
 
   --secondary:          oklch(0.22 0.04 235);
@@ -24,7 +24,7 @@
   --accent-foreground:  var(--foreground);
   --border:             oklch(0.28 0.04 235);
   --input:              var(--border);
-  --ring:               oklch(0.82 0.14 75);
+  --ring:               oklch(0.72 0.17 158);
   --destructive:        oklch(0.55 0.18 25);
   --destructive-foreground: oklch(0.98 0.01 220);
   --radius: 1rem;
@@ -37,7 +37,7 @@
   --card-foreground: var(--foreground);
   --popover:       oklch(0.17 0.04 235);
   --popover-foreground: var(--foreground);
-  --primary:           oklch(0.82 0.14 75);
+  --primary:           oklch(0.72 0.17 158);
   --primary-foreground: oklch(0.13 0.04 240);
   --secondary:          oklch(0.22 0.04 235);
   --secondary-foreground: var(--foreground);
@@ -49,7 +49,7 @@
   --destructive-foreground: oklch(0.98 0.01 220);
   --border:             oklch(0.28 0.04 235);
   --input:              var(--border);
-  --ring:               oklch(0.82 0.14 75);
+  --ring:               oklch(0.72 0.17 158);
 }
 
 @theme inline {
