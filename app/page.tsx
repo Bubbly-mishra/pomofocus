@@ -5,5 +5,5 @@ import { PomodoroTimer } from "@/components/pomodoro-timer"
 export default async function Home() {
   const session = await getSession()
   if (!session) redirect("/login")
-  return <PomodoroTimer />
+  return <PomodoroTimer username={session.username} />
 }

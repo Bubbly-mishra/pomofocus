@@ -1,13 +1,13 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut } from "lucide-react"
-import { useSession, signOut } from "next-auth/react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut, User } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -69,7 +69,9 @@ const CATEGORY_CONFIG: Record<Category, { label: string; icon: React.ReactNode; 
   },
 }
 
-export function PomodoroTimer() {
+export function PomodoroTimer({ username }: { username: string }) {
+  const router = useRouter()
+  const [showProfile, setShowProfile] = useState(false)
   const [mode, setMode] = useState<TimerMode>("pomodoro")
   const [timeLeft, setTimeLeft] = useState(TIMER_DURATIONS.pomodoro)
   const [isRunning, setIsRunning] = useState(false)
@@ -83,10 +85,6 @@ export function PomodoroTimer() {
   const [dailyMinutes, setDailyMinutes] = useState(0)
   const audioRef = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
-
-  const { data: session } = useSession()
-  const user = session?.user
-  const [showProfile, setShowProfile] = useState(false)
 
   const fetcher = useCallback((url: string) => fetch(url).then((r) => r.json()), [])
   const { data: tasks = [], mutate } = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
@@ -520,46 +518,40 @@ export function PomodoroTimer() {
 
   return (
     <div className="min-h-screen hills text-foreground flex flex-col relative">
-      {/* Profile button top-left */}
+      {/* Profile button */}
       <div className="fixed top-4 left-4 z-50">
         <button
           onClick={() => setShowProfile((p) => !p)}
-          className="flex items-center gap-2 bg-black/30 hover:bg-black/50 backdrop-blur border border-white/10 rounded-full pl-1 pr-3 py-1 transition-all"
+          className="flex items-center gap-2 bg-black/30 hover:bg-black/50 backdrop-blur border border-white/10 rounded-full pl-2 pr-3 py-1.5 transition-all"
         >
-          {user?.image ? (
-            <img src={user.image} alt={user.name ?? ""} className="w-7 h-7 rounded-full object-cover" />
-          ) : (
-            <div className="w-7 h-7 rounded-full bg-primary/60 flex items-center justify-center text-xs font-bold text-white">
-              {user?.name?.[0]?.toUpperCase() ?? "?"}
-            </div>
-          )}
-          <span className="text-xs text-white/80 font-medium max-w-[100px] truncate hidden sm:block">
-            {user?.name?.split(" ")[0]}
-          </span>
+          <div className="w-6 h-6 rounded-full bg-primary/70 flex items-center justify-center text-xs font-bold text-white shrink-0">
+            {username[0].toUpperCase()}
+          </div>
+          <span className="text-xs text-white/80 font-medium hidden sm:block">{username}</span>
         </button>
 
         {showProfile && (
-          <div className="absolute top-10 left-0 mt-1 w-60 glass border border-border rounded-2xl shadow-xl p-4 flex flex-col gap-3">
+          <div className="absolute top-11 left-0 mt-1 w-56 glass border border-border rounded-2xl shadow-xl p-4 flex flex-col gap-3">
             <div className="flex items-center gap-3">
-              {user?.image ? (
-                <img src={user.image} alt={user.name ?? ""} className="w-10 h-10 rounded-full object-cover" />
-              ) : (
-                <div className="w-10 h-10 rounded-full bg-primary/60 flex items-center justify-center text-sm font-bold text-white">
-                  {user?.name?.[0]?.toUpperCase() ?? "?"}
-                </div>
-              )}
-              <div className="min-w-0">
-                <p className="text-sm font-semibold text-foreground truncate">{user?.name}</p>
-                <p className="text-xs text-foreground/50 truncate">{user?.email}</p>
+              <div className="w-10 h-10 rounded-full bg-primary/60 flex items-center justify-center text-lg font-bold text-white shrink-0">
+                {username[0].toUpperCase()}
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">{username}</p>
+                <p className="text-xs text-foreground/40">Pomodoro Timer</p>
               </div>
             </div>
-            <div className="border-t border-border/50 pt-2">
-              <p className="text-xs text-foreground/40 mb-1">Today's focus</p>
-              <p className="text-lg font-bold text-primary">{formatPseudoHours(dailyMinutes)}h</p>
+            <div className="border-t border-border/40 pt-2">
+              <p className="text-xs text-foreground/40 mb-0.5">Today's focus</p>
+              <p className="text-xl font-bold text-primary">{formatPseudoHours(dailyMinutes)}h</p>
             </div>
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
-              className="flex items-center gap-2 text-sm text-destructive/80 hover:text-destructive transition-colors"
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST" })
+                router.push("/login")
+                router.refresh()
+              }}
+              className="flex items-center gap-2 text-sm text-destructive/70 hover:text-destructive transition-colors pt-1"
             >
               <LogOut className="w-4 h-4" />
               Sign out

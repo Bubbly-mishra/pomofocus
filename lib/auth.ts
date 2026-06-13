@@ -1,26 +1,28 @@
-import { getServerSession } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
+import { SignJWT, jwtVerify } from "jose"
+import { cookies } from "next/headers"
 
-export const authOptions = {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
-  pages: {
-    signIn: "/login",
-  },
-  callbacks: {
-    async session({ session, token }: any) {
-      if (session.user && token.sub) {
-        session.user.id = token.sub
-      }
-      return session
-    },
-  },
+const SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET || "pomodoro-secret-change-in-production"
+)
+
+export async function signToken(payload: { userId: string; username: string }) {
+  return new SignJWT(payload)
+    .setProtectedHeader({ alg: "HS256" })
+    .setExpirationTime("30d")
+    .sign(SECRET)
+}
+
+export async function verifyToken(token: string) {
+  try {
+    const { payload } = await jwtVerify(token, SECRET)
+    return payload as { userId: string; username: string }
+  } catch {
+    return null
+  }
 }
 
 export async function getSession() {
-  return getServerSession(authOptions)
+  const token = cookies().get("session")?.value
+  if (!token) return null
+  return verifyToken(token)
 }
