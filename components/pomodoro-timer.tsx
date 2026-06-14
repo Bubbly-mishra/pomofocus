@@ -328,8 +328,11 @@ export function PomodoroTimer({ username }: { username: string }) {
         {/* LEFT — Timer sticky on desktop */}
         <div className="w-full lg:w-1/2 lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col justify-center gap-3 lg:py-2">
 
+          {/* Outer rounded container */}
+          <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3">
+
           {/* Timer card */}
-          <div className="glass rounded-3xl px-8 py-6 flex flex-col items-center text-center">
+          <div className="bg-white/3 rounded-2xl px-8 py-6 flex flex-col items-center text-center border border-white/5">
 
             {/* Mode pills */}
             <div className="flex gap-1 mb-5 bg-black/25 rounded-full p-1 border border-white/8">
@@ -396,6 +399,7 @@ export function PomodoroTimer({ username }: { username: string }) {
               <p className="text-xs text-foreground/30">Tap a task on the right to track it</p>
             </div>
           )}
+          </div>{/* end outer rounded container */}
         </div>
 
         {/* RIGHT — Tasks */}
