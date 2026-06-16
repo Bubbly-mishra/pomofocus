@@ -438,8 +438,8 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="glass rounded-3xl flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
 
             {/* Panel header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
-              <div>
+            <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 gap-3">
+              <div className="shrink-0">
                 <h2 className="font-semibold text-foreground text-base">{TAB_LABEL[activeTab]}</h2>
                 <p className="text-xs text-foreground/40 mt-0.5">
                   {displayTasks.filter(t => !t.isCompleted).length === 0
@@ -447,9 +447,30 @@ export function PomodoroTimer({ username }: { username: string }) {
                     : `${displayTasks.filter(t => !t.isCompleted).length} remaining`}
                 </p>
               </div>
+
+              {/* Daily capacity indicator — Today tab only */}
+              {activeTab === "today" && (() => {
+                const totalHours = tabTasks("today").reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
+                const cap = 6
+                const over = totalHours > cap
+                const display = totalHours % 1 === 0 ? totalHours.toString() : totalHours.toFixed(1)
+                return (
+                  <span
+                    className={[
+                      "flex-1 text-center text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors truncate",
+                      over
+                        ? "text-red-300 bg-red-500/10 border-red-400/30"
+                        : "text-foreground/50 bg-white/4 border-white/10",
+                    ].join(" ")}
+                  >
+                    {display} of {cap}h deep work occupied
+                  </span>
+                )
+              })()}
+
               <button
                 onClick={() => { setIsAddingTask(true); setNewTitle(""); setNewHours(1); setNewPriority("medium"); setNewSchedule("today"); setNewCategory("work") }}
-                className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm"
+                className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm shrink-0"
               >
                 <Plus className="w-4 h-4" /> Add Task
               </button>
