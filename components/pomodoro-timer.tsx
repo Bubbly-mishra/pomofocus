@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut, ListTodo } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -117,6 +117,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [showProfile,     setShowProfile]     = useState(false)
   const [showModeMenu,    setShowModeMenu]    = useState(false)
+  const [showTaskMenu,    setShowTaskMenu]    = useState(false)
 
   const audioRef   = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
@@ -267,43 +268,88 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
 
-          {/* Profile */}
-          <div className="relative">
-            <button
-              onClick={() => setShowProfile(p => !p)}
-              className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
-            >
-              <div className="w-8 h-8 rounded-full bg-primary/90 flex items-center justify-center text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 ring-2 ring-primary/30">
-                {username[0].toUpperCase()}
-              </div>
-              <span className="text-sm text-foreground/70 font-medium hidden sm:block">{username}</span>
-            </button>
+          {/* Profile + Tasks */}
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <button
+                onClick={() => setShowProfile(p => !p)}
+                className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
+              >
+                <div className="w-8 h-8 rounded-full bg-primary/90 flex items-center justify-center text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 ring-2 ring-primary/30">
+                  {username[0].toUpperCase()}
+                </div>
+                <span className="text-sm text-foreground/70 font-medium hidden sm:block">{username}</span>
+              </button>
 
-            {showProfile && (
-              <div className="absolute top-12 left-0 w-60 glass rounded-2xl p-5 flex flex-col gap-4 z-50">
-                <div className="flex items-center gap-3">
-                  <div className="w-11 h-11 rounded-full bg-primary/80 flex items-center justify-center text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
-                    {username[0].toUpperCase()}
+              {showProfile && (
+                <div className="absolute top-12 left-0 w-60 glass rounded-2xl p-5 flex flex-col gap-4 z-50">
+                  <div className="flex items-center gap-3">
+                    <div className="w-11 h-11 rounded-full bg-primary/80 flex items-center justify-center text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
+                      {username[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">{username}</p>
+                      <p className="text-xs text-foreground/40 mt-0.5">DeepWork</p>
+                    </div>
                   </div>
+                  <div className="h-px bg-white/8" />
                   <div>
-                    <p className="text-sm font-semibold text-foreground">{username}</p>
-                    <p className="text-xs text-foreground/40 mt-0.5">DeepWork</p>
+                    <p className="text-xs text-foreground/40 mb-1">Today&apos;s focus</p>
+                    <p className="text-2xl font-bold text-primary">{fmtFocus(dailyMinutes)}</p>
                   </div>
+                  <button
+                    onClick={signOut}
+                    className="flex items-center gap-2 text-sm text-foreground/50 hover:text-destructive transition-colors group"
+                  >
+                    <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+                    Sign out
+                  </button>
                 </div>
-                <div className="h-px bg-white/8" />
-                <div>
-                  <p className="text-xs text-foreground/40 mb-1">Today&apos;s focus</p>
-                  <p className="text-2xl font-bold text-primary">{fmtFocus(dailyMinutes)}</p>
+              )}
+            </div>
+
+            {/* Tasks dropdown trigger */}
+            <div className="relative">
+              <button
+                onClick={() => setShowTaskMenu(p => !p)}
+                className={[
+                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border",
+                  showTaskMenu || activeTab !== "today"
+                    ? "bg-primary/15 text-primary border-primary/30"
+                    : "bg-white/6 text-foreground/60 border-white/10 hover:text-foreground/85 hover:bg-white/10",
+                ].join(" ")}
+              >
+                <ListTodo className="w-4 h-4" />
+                <span className="hidden sm:block">Tasks</span>
+              </button>
+
+              {showTaskMenu && (
+                <div className="absolute top-12 left-0 w-56 glass rounded-2xl p-2 flex flex-col gap-1 z-50">
+                  {(["today", "work", "study", "personal"] as ActiveTab[]).map(tab => {
+                    const count = tabTasks(tab).filter(t => !t.isCompleted).length
+                    const isActive = activeTab === tab
+                    return (
+                      <button
+                        key={tab}
+                        onClick={() => { setActiveTab(tab); setShowTaskMenu(false); setIsAddingTask(false) }}
+                        className={[
+                          "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left",
+                          isActive ? TAB_ACTIVE[tab] : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
+                        ].join(" ")}
+                      >
+                        {TAB_ICON[tab]}
+                        <span className="flex-1">{TAB_LABEL[tab]}</span>
+                        {count > 0 && (
+                          <span className={["text-xs rounded-full px-1.5 py-0.5 leading-none font-bold", isActive ? "bg-white/25" : "bg-white/10"].join(" ")}>
+                            {count}
+                          </span>
+                        )}
+                      </button>
+                    )
+                  })}
                 </div>
-                <button
-                  onClick={signOut}
-                  className="flex items-center gap-2 text-sm text-foreground/50 hover:text-destructive transition-colors group"
-                >
-                  <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                  Sign out
-                </button>
-              </div>
-            )}
+              )}
+            </div>
           </div>
 
           {/* Brand */}
@@ -322,8 +368,8 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
       </header>
 
-      {(showProfile || showModeMenu) && (
-        <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false) }} />
+      {(showProfile || showModeMenu || showTaskMenu) && (
+        <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false); setShowTaskMenu(false) }} />
       )}
 
       {/* Body */}
@@ -445,31 +491,8 @@ export function PomodoroTimer({ username }: { username: string }) {
         {/* RIGHT — Tasks */}
         <div className="w-full lg:w-1/2 lg:h-[calc(100vh-56px)] flex flex-col gap-2.5 min-w-0 lg:py-2">
 
-          {/* Tab bar */}
-          <div className="flex gap-2 overflow-x-auto pb-1 shrink-0" style={{ scrollbarWidth: "none" }}>
-            {(["today", "work", "study", "personal"] as ActiveTab[]).map(tab => {
-              const count    = tabTasks(tab).filter(t => !t.isCompleted).length
-              const isActive = activeTab === tab
-              return (
-                <button
-                  key={tab}
-                  onClick={() => { setActiveTab(tab); setIsAddingTask(false) }}
-                  className={[
-                    "flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all whitespace-nowrap shrink-0",
-                    isActive ? TAB_ACTIVE[tab] : "border-border/40 text-foreground/40 hover:text-foreground/70 hover:border-border/70",
-                  ].join(" ")}
-                >
-                  {TAB_ICON[tab]}
-                  <span>{TAB_LABEL[tab]}</span>
-                  {count > 0 && (
-                    <span className={["text-xs rounded-full px-1.5 py-0.5 leading-none font-bold", isActive ? "bg-white/25" : "bg-white/10"].join(" ")}>
-                      {count}
-                    </span>
-                  )}
-                </button>
-              )
-            })}
-          </div>
+          {/* Spacer matching the removed tab bar height — keeps panels aligned with timer */}
+          <div className="hidden lg:block h-9 shrink-0" />
 
           {/* Task panel */}
           <div className="glass rounded-3xl flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
