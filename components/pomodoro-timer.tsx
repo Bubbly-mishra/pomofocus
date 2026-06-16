@@ -403,10 +403,10 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* RIGHT — Tasks */}
-        <div className="w-full lg:w-1/2 flex flex-col gap-2.5 min-w-0">
+        <div className="w-full lg:w-1/2 lg:h-[calc(100vh-56px)] flex flex-col gap-2.5 min-w-0 lg:py-2">
 
           {/* Tab bar */}
-          <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+          <div className="flex gap-2 overflow-x-auto pb-1 shrink-0" style={{ scrollbarWidth: "none" }}>
             {(["today", "work", "study", "personal"] as ActiveTab[]).map(tab => {
               const count    = tabTasks(tab).filter(t => !t.isCompleted).length
               const isActive = activeTab === tab
@@ -432,7 +432,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           </div>
 
           {/* Task panel */}
-          <div className="glass rounded-3xl flex flex-col overflow-hidden">
+          <div className="glass rounded-3xl flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
 
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 py-3 border-b border-border/40">
@@ -489,7 +489,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             )}
 
             {/* Task list */}
-            <div className="px-3 py-2.5 space-y-1.5">
+            <div className="px-3 py-2.5 space-y-1.5 lg:flex-1 lg:overflow-y-auto no-scrollbar">
               {displayTasks.length === 0 && !isAddingTask && (
                 <div className="flex flex-col items-center justify-center py-16 text-foreground/20">
                   <p className="text-4xl mb-2">✓</p>
