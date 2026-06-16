@@ -117,7 +117,6 @@ export function PomodoroTimer({ username }: { username: string }) {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [showProfile,     setShowProfile]     = useState(false)
   const [showModeMenu,    setShowModeMenu]    = useState(false)
-  const [showTaskMenu,    setShowTaskMenu]    = useState(false)
 
   const audioRef   = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
@@ -308,48 +307,14 @@ export function PomodoroTimer({ username }: { username: string }) {
               )}
             </div>
 
-            {/* Tasks dropdown trigger */}
-            <div className="relative">
-              <button
-                onClick={() => setShowTaskMenu(p => !p)}
-                className={[
-                  "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border",
-                  showTaskMenu || activeTab !== "today"
-                    ? "bg-primary/15 text-primary border-primary/30"
-                    : "bg-white/6 text-foreground/60 border-white/10 hover:text-foreground/85 hover:bg-white/10",
-                ].join(" ")}
-              >
-                <ListTodo className="w-4 h-4" />
-                <span className="hidden sm:block">Tasks</span>
-              </button>
-
-              {showTaskMenu && (
-                <div className="absolute top-12 left-0 w-56 glass rounded-2xl p-2 flex flex-col gap-1 z-50">
-                  {(["today", "work", "study", "personal"] as ActiveTab[]).map(tab => {
-                    const count = tabTasks(tab).filter(t => !t.isCompleted).length
-                    const isActive = activeTab === tab
-                    return (
-                      <button
-                        key={tab}
-                        onClick={() => { setActiveTab(tab); setShowTaskMenu(false); setIsAddingTask(false) }}
-                        className={[
-                          "flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-medium transition-colors text-left",
-                          isActive ? TAB_ACTIVE[tab] : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
-                        ].join(" ")}
-                      >
-                        {TAB_ICON[tab]}
-                        <span className="flex-1">{TAB_LABEL[tab]}</span>
-                        {count > 0 && (
-                          <span className={["text-xs rounded-full px-1.5 py-0.5 leading-none font-bold", isActive ? "bg-white/25" : "bg-white/10"].join(" ")}>
-                            {count}
-                          </span>
-                        )}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
+            {/* Tasks — navigates to dedicated tasks page */}
+            <button
+              onClick={() => router.push("/tasks")}
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border bg-white/6 text-foreground/60 border-white/10 hover:text-foreground/85 hover:bg-white/10"
+            >
+              <ListTodo className="w-4 h-4" />
+              <span className="hidden sm:block">Tasks</span>
+            </button>
           </div>
 
           {/* Brand */}
@@ -368,8 +333,8 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
       </header>
 
-      {(showProfile || showModeMenu || showTaskMenu) && (
-        <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false); setShowTaskMenu(false) }} />
+      {(showProfile || showModeMenu) && (
+        <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false) }} />
       )}
 
       {/* Body */}
