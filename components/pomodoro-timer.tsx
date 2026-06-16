@@ -326,10 +326,10 @@ export function PomodoroTimer({ username }: { username: string }) {
       <main className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 gap-4">
 
         {/* LEFT — Timer sticky on desktop */}
-        <div className="w-full lg:w-1/2 lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col justify-center gap-3 lg:py-2">
+        <div className="w-full lg:w-1/2 lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col gap-3 lg:py-2">
 
           {/* Outer rounded container */}
-          <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3">
+          <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1 lg:justify-center">
 
           {/* Timer card */}
           <div className="bg-white/3 rounded-2xl px-8 py-6 flex flex-col items-center text-center border border-white/5">
