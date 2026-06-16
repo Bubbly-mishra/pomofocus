@@ -329,7 +329,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="w-full lg:w-1/2 lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col gap-3 lg:py-2">
 
           {/* Outer rounded container */}
-          <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1 lg:justify-center">
+          <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
 
           {/* Timer card */}
           <div className="bg-white/3 rounded-2xl px-8 py-6 flex flex-col items-center text-center border border-white/5">
