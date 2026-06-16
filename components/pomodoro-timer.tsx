@@ -438,7 +438,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="glass rounded-3xl flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
 
             {/* Panel header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-border/40 gap-3">
+            <div className="flex items-center justify-between px-5 py-3 gap-3">
               <div className="shrink-0">
                 <h2 className="font-semibold text-foreground text-base">{TAB_LABEL[activeTab]}</h2>
                 <p className="text-xs text-foreground/40 mt-0.5">
@@ -448,26 +448,6 @@ export function PomodoroTimer({ username }: { username: string }) {
                 </p>
               </div>
 
-              {/* Daily capacity indicator — Today tab only */}
-              {activeTab === "today" && (() => {
-                const totalHours = tabTasks("today").reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
-                const cap = 6
-                const over = totalHours > cap
-                const display = totalHours % 1 === 0 ? totalHours.toString() : totalHours.toFixed(1)
-                return (
-                  <span
-                    className={[
-                      "flex-1 text-center text-xs font-semibold px-3 py-1.5 rounded-full border transition-colors truncate",
-                      over
-                        ? "text-red-300 bg-red-500/10 border-red-400/30"
-                        : "text-foreground/50 bg-white/4 border-white/10",
-                    ].join(" ")}
-                  >
-                    {display} of {cap}h deep work occupied
-                  </span>
-                )
-              })()}
-
               <button
                 onClick={() => { setIsAddingTask(true); setNewTitle(""); setNewHours(1); setNewPriority("medium"); setNewSchedule("today"); setNewCategory("work") }}
                 className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm shrink-0"
@@ -475,6 +455,35 @@ export function PomodoroTimer({ username }: { username: string }) {
                 <Plus className="w-4 h-4" /> Add Task
               </button>
             </div>
+
+            {/* Daily capacity bar — Today tab only */}
+            {activeTab === "today" && (() => {
+              const totalHours = tabTasks("today").reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
+              const cap = 6
+              const over = totalHours > cap
+              const pct = Math.min(1, totalHours / cap)
+              const display = totalHours % 1 === 0 ? totalHours.toString() : totalHours.toFixed(1)
+              return (
+                <div className="px-5 pb-3 -mt-1">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className={["text-xs font-medium", over ? "text-red-300" : "text-foreground/45"].join(" ")}>
+                      {display} of {cap}h deep work occupied
+                    </span>
+                    {over && (
+                      <span className="text-xs font-semibold text-red-300">Over capacity</span>
+                    )}
+                  </div>
+                  <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
+                    <div
+                      className={["h-full rounded-full transition-all duration-500", over ? "bg-red-400" : "bg-primary/70"].join(" ")}
+                      style={{ width: `${pct * 100}%` }}
+                    />
+                  </div>
+                </div>
+              )
+            })()}
+
+            <div className="border-b border-border/40" />
 
             {/* Add form */}
             {isAddingTask && (
