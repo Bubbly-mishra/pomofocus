@@ -116,6 +116,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const [dailyMinutes,    setDailyMinutes]    = useState(0)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
   const [showProfile,     setShowProfile]     = useState(false)
+  const [showModeMenu,    setShowModeMenu]    = useState(false)
 
   const audioRef   = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(null)
@@ -123,6 +124,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const fetcher = useCallback((url: string) => fetch(url).then(r => r.json()), [])
   const { data: tasks = [], mutate }              = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
   const { data: totalTime, mutate: mutateTotalTime } = useSWR<TotalTime>("/api/totalTime", fetcher)
+  const { data: weeklyData } = useSWR<{ date: string; minutes: number }[]>("/api/weeklyTime", fetcher)
 
   useEffect(() => { if (totalTime) setDailyMinutes(totalTime.minutes) }, [totalTime])
 
@@ -134,7 +136,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const displayTasks  = tabTasks(activeTab)
   const selectedTask  = tasks.find(t => t.id === selectedTaskId)
   const totalDuration = DURATIONS[mode]
-  const R = 98, STROKE = 5, CIRC = 2 * Math.PI * R
+  const R = 118, STROKE = 6, CIRC = 2 * Math.PI * R
   const ringOffset = CIRC * (timeLeft / totalDuration)
 
   // ── timer ──────────────────────────────────────────────────────────────────
@@ -320,7 +322,9 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
       </header>
 
-      {showProfile && <div className="fixed inset-0 z-40" onClick={() => setShowProfile(false)} />}
+      {(showProfile || showModeMenu) && (
+        <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false) }} />
+      )}
 
       {/* Body */}
       <main className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 gap-4">
@@ -335,53 +339,86 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
 
           {/* Timer card */}
-          <div className="bg-white/3 rounded-2xl px-8 py-6 flex flex-col items-center text-center border border-white/5">
-
-            {/* Mode pills */}
-            <div className="flex gap-1 mb-5 bg-black/25 rounded-full p-1 border border-white/8">
-              {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
-                <button
-                  key={m}
-                  onClick={() => handleModeChange(m)}
-                  className={[
-                    "px-3 py-1.5 rounded-full text-xs font-semibold transition-all whitespace-nowrap",
-                    mode === m ? "bg-primary text-primary-foreground shadow-sm" : "text-foreground/50 hover:text-foreground/80",
-                  ].join(" ")}
-                >
-                  {MODE_LABEL[m]}
-                </button>
-              ))}
-            </div>
+          <div className="bg-white/3 rounded-2xl px-8 py-8 flex flex-col items-center text-center border border-white/5 relative">
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-5" style={{ width: 220, height: 220 }}>
-              <svg width={220} height={220} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
-                <circle cx={110} cy={110} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/10" />
+            <div className="relative flex items-center justify-center mb-6" style={{ width: 260, height: 260 }}>
+              <svg width={260} height={260} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+                <defs>
+                  <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                    <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.5" />
+                    <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="1" />
+                  </linearGradient>
+                </defs>
+                <circle cx={130} cy={130} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/8" />
                 <circle
-                  cx={110} cy={110} r={R}
-                  fill="none" stroke="currentColor" strokeWidth={STROKE}
+                  cx={130} cy={130} r={R}
+                  fill="none" stroke="url(#ringGradient)" strokeWidth={STROKE}
                   strokeDasharray={CIRC} strokeDashoffset={ringOffset}
                   strokeLinecap="round"
-                  className="text-primary transition-all duration-1000 ease-linear"
+                  className="transition-all duration-1000 ease-linear"
+                  style={{ filter: "drop-shadow(0 0 8px var(--color-primary))" }}
                 />
               </svg>
-              <span className="text-6xl font-bold font-mono tabular-nums tracking-tighter text-foreground relative z-10">
-                {fmtTime(timeLeft)}
-              </span>
+
+              <div className="relative z-10 flex flex-col items-center gap-3">
+                <span className="text-6xl font-bold font-mono tabular-nums tracking-tighter text-foreground">
+                  {fmtTime(timeLeft)}
+                </span>
+
+                {/* Mode dropdown trigger */}
+                <div className="relative">
+                  <button
+                    onClick={() => setShowModeMenu(p => !p)}
+                    className="flex items-center gap-1.5 text-sm text-foreground/60 hover:text-foreground/90 transition-colors"
+                  >
+                    {MODE_LABEL[mode]}
+                    <svg width="12" height="12" viewBox="0 0 12 12" className={["transition-transform", showModeMenu ? "rotate-180" : ""].join(" ")}>
+                      <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+
+                  {showModeMenu && (
+                    <div className="absolute top-7 left-1/2 -translate-x-1/2 w-40 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50">
+                      {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
+                        <button
+                          key={m}
+                          onClick={() => { handleModeChange(m); setShowModeMenu(false) }}
+                          className={[
+                            "px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors",
+                            mode === m ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
+                          ].join(" ")}
+                        >
+                          {MODE_LABEL[m]}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Circular play / pause button */}
+                <button
+                  onClick={toggleTimer}
+                  className="mt-2 w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
+                  style={{
+                    background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
+                    border: "1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)",
+                  }}
+                >
+                  {isRunning ? (
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                      <rect x="5" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
+                      <rect x="13" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
+                    </svg>
+                  ) : (
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                      <path d="M5 3.5v15l13-7.5z" fill="var(--color-foreground)" />
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
-            {/* Start / Pause */}
-            <button
-              onClick={toggleTimer}
-              className={[
-                "w-full py-3.5 rounded-2xl text-sm font-bold tracking-widest uppercase transition-all shadow-lg mb-1.5",
-                isRunning
-                  ? "bg-white/10 border border-white/20 text-foreground hover:bg-white/15"
-                  : "bg-primary text-primary-foreground hover:brightness-110",
-              ].join(" ")}
-            >
-              {isRunning ? "Pause" : "Start"}
-            </button>
             <p className="text-foreground/25 text-xs">Space to toggle</p>
           </div>
 
@@ -599,6 +636,46 @@ export function PomodoroTimer({ username }: { username: string }) {
                 )
               })}
             </div>
+          </div>
+
+          {/* Weekly focus chart */}
+          <div className="glass rounded-3xl px-5 py-4 shrink-0">
+            <h3 className="text-sm font-semibold text-foreground mb-3">This Week</h3>
+            {weeklyData ? (
+              <div className="flex items-end justify-between gap-2" style={{ height: 90 }}>
+                {(() => {
+                  const maxMin = Math.max(60, ...weeklyData.map(d => d.minutes))
+                  return weeklyData.map((d) => {
+                    const dateObj = new Date(d.date + "T00:00:00")
+                    const dayLabel = dateObj.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1)
+                    const isToday = d.date === new Date().toISOString().split("T")[0]
+                    const pct = d.minutes / maxMin
+                    const barHeight = Math.max(4, pct * 64)
+                    return (
+                      <div key={d.date} className="flex flex-col items-center gap-1.5 flex-1">
+                        <span className="text-[10px] text-foreground/35 tabular-nums h-3">
+                          {d.minutes > 0 ? fmtMins(d.minutes) : ""}
+                        </span>
+                        <div className="w-full flex items-end justify-center" style={{ height: 64 }}>
+                          <div
+                            className={[
+                              "w-full max-w-[22px] rounded-t-md transition-all duration-500",
+                              isToday ? "bg-primary" : "bg-primary/35",
+                            ].join(" ")}
+                            style={{ height: `${barHeight}px` }}
+                          />
+                        </div>
+                        <span className={["text-xs font-medium", isToday ? "text-primary" : "text-foreground/40"].join(" ")}>
+                          {dayLabel}
+                        </span>
+                      </div>
+                    )
+                  })
+                })()}
+              </div>
+            ) : (
+              <div className="h-[90px] flex items-center justify-center text-foreground/20 text-xs">Loading…</div>
+            )}
           </div>
         </div>
       </main>
