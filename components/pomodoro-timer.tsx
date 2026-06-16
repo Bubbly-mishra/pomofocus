@@ -136,7 +136,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const displayTasks  = tabTasks(activeTab)
   const selectedTask  = tasks.find(t => t.id === selectedTaskId)
   const totalDuration = DURATIONS[mode]
-  const R = 118, STROKE = 6, CIRC = 2 * Math.PI * R
+  const R = 168, STROKE = 7, CIRC = 2 * Math.PI * R
   const ringOffset = CIRC * (timeLeft / totalDuration)
 
   // ── timer ──────────────────────────────────────────────────────────────────
@@ -339,20 +339,20 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
 
           {/* Timer card */}
-          <div className="bg-white/3 rounded-2xl px-8 py-8 flex flex-col items-center text-center border border-white/5 relative">
+          <div className="bg-white/3 rounded-2xl px-6 py-8 flex flex-col items-center text-center border border-white/5 relative">
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-6" style={{ width: 260, height: 260 }}>
-              <svg width={260} height={260} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+            <div className="relative flex items-center justify-center mb-6" style={{ width: 360, height: 360 }}>
+              <svg width={360} height={360} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
                 <defs>
                   <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.5" />
                     <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="1" />
                   </linearGradient>
                 </defs>
-                <circle cx={130} cy={130} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/8" />
+                <circle cx={180} cy={180} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/8" />
                 <circle
-                  cx={130} cy={130} r={R}
+                  cx={180} cy={180} r={R}
                   fill="none" stroke="url(#ringGradient)" strokeWidth={STROKE}
                   strokeDasharray={CIRC} strokeDashoffset={ringOffset}
                   strokeLinecap="round"
@@ -362,7 +362,7 @@ export function PomodoroTimer({ username }: { username: string }) {
               </svg>
 
               <div className="relative z-10 flex flex-col items-center gap-3">
-                <span className="text-6xl font-bold font-mono tabular-nums tracking-tighter text-foreground">
+                <span className="text-7xl font-bold font-mono tabular-nums tracking-tighter text-foreground">
                   {fmtTime(timeLeft)}
                 </span>
 
@@ -399,19 +399,19 @@ export function PomodoroTimer({ username }: { username: string }) {
                 {/* Circular play / pause button */}
                 <button
                   onClick={toggleTimer}
-                  className="mt-2 w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
+                  className="mt-2 w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg"
                   style={{
                     background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
                     border: "1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)",
                   }}
                 >
                   {isRunning ? (
-                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
                       <rect x="5" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
                       <rect x="13" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
                     </svg>
                   ) : (
-                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                    <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
                       <path d="M5 3.5v15l13-7.5z" fill="var(--color-foreground)" />
                     </svg>
                   )}
