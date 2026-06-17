@@ -406,19 +406,19 @@ export function PomodoroTimer({ username }: { username: string }) {
                 {/* Circular play / pause button */}
                 <button
                   onClick={toggleTimer}
-                  className="mt-2 w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg"
+                  className="mt-2 w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
                   style={{
                     background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
                     border: "1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)",
                   }}
                 >
                   {isRunning ? (
-                    <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
+                    <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
                       <rect x="5" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
                       <rect x="13" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
                     </svg>
                   ) : (
-                    <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
+                    <svg width="20" height="20" viewBox="0 0 22 22" fill="none">
                       <path d="M5 3.5v15l13-7.5z" fill="var(--color-foreground)" />
                     </svg>
                   )}
@@ -459,11 +459,12 @@ export function PomodoroTimer({ username }: { username: string }) {
               const totalCount  = todayList.length
               const totalHours  = todayList.reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
               const cap         = 6
+              const totalSessions = 6
               const pct         = Math.min(1, totalHours / cap)
               const over        = totalHours > cap
               const percentDisp = Math.round(pct * 100)
-              const remainMin   = Math.max(0, cap * 60 - totalHours * 60)
-              const sessionsLeft = over ? 0 : Math.ceil(remainMin / 50)
+              const sessionsUsed = Math.min(totalSessions, Math.ceil(totalHours))
+              const sessionsLeft = Math.max(0, totalSessions - sessionsUsed)
 
               const ringR = 64, ringStroke = 10, ringCirc = 2 * Math.PI * ringR
               const ringOffset2 = ringCirc * (1 - pct)
@@ -506,7 +507,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                     </div>
                   ) : (
                     <div className="bg-white/4 border border-white/10 rounded-2xl px-4 py-2.5 text-center w-full">
-                      <p className="text-lg font-bold text-foreground leading-tight">{sessionsLeft}</p>
+                      <p className="text-lg font-bold text-foreground leading-tight">{sessionsLeft} <span className="text-foreground/30 text-sm font-medium">/ {totalSessions}</span></p>
                       <p className="text-xs text-foreground/35">Session{sessionsLeft === 1 ? "" : "s"} Left</p>
                     </div>
                   )}
@@ -573,7 +574,6 @@ export function PomodoroTimer({ username }: { username: string }) {
               {[...displayTasks.filter(t => !t.isCompleted), ...displayTasks.filter(t => t.isCompleted)].map(task => {
                 const isSelected = selectedTaskId === task.id
                 const isConfirm  = confirmDeleteId === task.id
-                const catTextColor = task.category === "work" ? "text-blue-300" : task.category === "study" ? "text-purple-300" : "text-pink-300"
 
                 return (
                   <div
@@ -594,9 +594,26 @@ export function PomodoroTimer({ username }: { username: string }) {
                     <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/40" : "text-foreground"].join(" ")}>
                       {task.title}
                     </span>
-                    <span className={["text-xs font-medium shrink-0", catTextColor].join(" ")}>
-                      {TAB_LABEL[task.category]}
+
+                    {/* Category icon chip */}
+                    <span className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border shrink-0", CAT_CHIP[task.category]].join(" ")}>
+                      {CAT_ICON[task.category]}
                     </span>
+
+                    {/* Today schedule glow badge */}
+                    <button
+                      title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
+                      onClick={e => { e.stopPropagation(); toggleSchedule(task.id) }}
+                      className={[
+                        "p-1.5 rounded-lg border transition shrink-0",
+                        task.schedule === "today"
+                          ? "border-amber-400/40 text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
+                          : "border-border/30 text-foreground/30 hover:text-foreground/60",
+                      ].join(" ")}
+                    >
+                      {task.schedule === "today" ? <Sun className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                    </button>
+
                     {isConfirm ? (
                       <div className="flex gap-1 shrink-0">
                         <button onClick={e => { e.stopPropagation(); deleteTask(task.id) }} className="text-xs px-2 py-1 rounded-lg bg-destructive text-white hover:brightness-110 font-semibold">Yes</button>
