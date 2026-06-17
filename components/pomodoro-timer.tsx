@@ -124,7 +124,6 @@ export function PomodoroTimer({ username }: { username: string }) {
   const fetcher = useCallback((url: string) => fetch(url).then(r => r.json()), [])
   const { data: tasks = [], mutate }              = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
   const { data: totalTime, mutate: mutateTotalTime } = useSWR<TotalTime>("/api/totalTime", fetcher)
-  const { data: weeklyData } = useSWR<{ date: string; minutes: number }[]>("/api/weeklyTime", fetcher)
 
   useEffect(() => { if (totalTime) setDailyMinutes(totalTime.minutes) }, [totalTime])
 
@@ -341,10 +340,7 @@ export function PomodoroTimer({ username }: { username: string }) {
       <main className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 gap-4">
 
         {/* LEFT — Timer sticky on desktop */}
-        <div className="w-full lg:w-1/2 lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col gap-3 lg:py-2">
-
-          {/* Spacer to match tab bar height on the right, so panels align */}
-          <div className="hidden lg:block h-9 shrink-0" />
+        <div className="w-full lg:w-[36%] lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col gap-3 lg:py-2">
 
           {/* Outer rounded container */}
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
@@ -453,62 +449,88 @@ export function PomodoroTimer({ username }: { username: string }) {
           </div>{/* end outer rounded container */}
         </div>
 
-        {/* RIGHT — Tasks */}
-        <div className="w-full lg:w-1/2 lg:h-[calc(100vh-56px)] flex flex-col gap-2.5 min-w-0 lg:py-2">
+        {/* MIDDLE — Today's stats */}
+        <div className="w-full lg:w-[22%] flex flex-col lg:py-2">
+          <div className="glass rounded-3xl px-5 py-5 flex flex-col items-center gap-4 lg:flex-1">
 
-          {/* Spacer matching the removed tab bar height — keeps panels aligned with timer */}
-          <div className="hidden lg:block h-9 shrink-0" />
+            {(() => {
+              const todayList   = tabTasks("today")
+              const doneCount   = todayList.filter(t => t.isCompleted).length
+              const totalCount  = todayList.length
+              const totalHours  = todayList.reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
+              const cap         = 6
+              const pct         = Math.min(1, totalHours / cap)
+              const over        = totalHours > cap
+              const percentDisp = Math.round(pct * 100)
+              const remainMin   = Math.max(0, cap * 60 - totalHours * 60)
+              const sessionsLeft = over ? 0 : Math.ceil(remainMin / 50)
 
-          {/* Task panel */}
+              const ringR = 64, ringStroke = 10, ringCirc = 2 * Math.PI * ringR
+              const ringOffset2 = ringCirc * (1 - pct)
+
+              return (
+                <>
+                  {/* Header */}
+                  <div className="text-center">
+                    <h3 className="text-base font-semibold text-foreground">Today&apos;s</h3>
+                    <p className="text-xs font-medium text-emerald-400 mt-0.5">{doneCount}/{totalCount} Done</p>
+                  </div>
+
+                  {/* Focus time */}
+                  <div className="text-center">
+                    <p className="text-2xl font-bold text-primary leading-tight">{fmtMins(dailyMinutes)}</p>
+                    <p className="text-xs text-foreground/35 mt-0.5">Focus Time</p>
+                  </div>
+
+                  {/* Capacity ring */}
+                  <div className="relative flex items-center justify-center" style={{ width: 148, height: 148 }}>
+                    <svg width={148} height={148} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+                      <circle cx={74} cy={74} r={ringR} fill="none" stroke="currentColor" strokeWidth={ringStroke} className="text-white/8" />
+                      <circle
+                        cx={74} cy={74} r={ringR}
+                        fill="none" stroke="currentColor" strokeWidth={ringStroke}
+                        strokeDasharray={ringCirc} strokeDashoffset={ringOffset2}
+                        strokeLinecap="round"
+                        className={["transition-all duration-700", over ? "text-red-400" : "text-primary"].join(" ")}
+                      />
+                    </svg>
+                    <span className={["relative z-10 text-2xl font-bold", over ? "text-red-300" : "text-foreground"].join(" ")}>
+                      {percentDisp}%
+                    </span>
+                  </div>
+
+                  {/* Sessions left / over capacity chip */}
+                  {over ? (
+                    <div className="bg-red-500/10 border border-red-400/30 rounded-2xl px-4 py-2.5 text-center w-full">
+                      <p className="text-xs font-semibold text-red-300">Over capacity</p>
+                    </div>
+                  ) : (
+                    <div className="bg-white/4 border border-white/10 rounded-2xl px-4 py-2.5 text-center w-full">
+                      <p className="text-lg font-bold text-foreground leading-tight">{sessionsLeft}</p>
+                      <p className="text-xs text-foreground/35">Session{sessionsLeft === 1 ? "" : "s"} Left</p>
+                    </div>
+                  )}
+                </>
+              )
+            })()}
+          </div>
+        </div>
+
+        {/* RIGHT — Tasks (simplified) */}
+        <div className="w-full lg:flex-1 flex flex-col gap-2.5 min-w-0 lg:py-2">
+
           <div className="glass rounded-3xl flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
 
             {/* Panel header */}
-            <div className="flex items-center justify-between px-5 py-3 gap-3">
-              <div className="shrink-0">
-                <h2 className="font-semibold text-foreground text-base">{TAB_LABEL[activeTab]}</h2>
-                <p className="text-xs text-foreground/40 mt-0.5">
-                  {displayTasks.filter(t => !t.isCompleted).length === 0
-                    ? (displayTasks.length > 0 ? "All done 🎉" : "No tasks yet")
-                    : `${displayTasks.filter(t => !t.isCompleted).length} remaining`}
-                </p>
-              </div>
-
+            <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+              <h2 className="font-semibold text-foreground text-base">Today&apos;s Tasks</h2>
               <button
-                onClick={() => { setIsAddingTask(true); setNewTitle(""); setNewHours(1); setNewPriority("medium"); setNewSchedule("today"); setNewCategory("work") }}
-                className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm shrink-0"
+                onClick={() => router.push("/tasks")}
+                className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
               >
-                <Plus className="w-4 h-4" /> Add Task
+                View all
               </button>
             </div>
-
-            {/* Daily capacity bar — Today tab only */}
-            {activeTab === "today" && (() => {
-              const totalHours = tabTasks("today").reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
-              const cap = 6
-              const over = totalHours > cap
-              const pct = Math.min(1, totalHours / cap)
-              const display = totalHours % 1 === 0 ? totalHours.toString() : totalHours.toFixed(1)
-              return (
-                <div className="px-5 pb-3 -mt-1">
-                  <div className="flex items-center justify-between mb-1.5">
-                    <span className={["text-xs font-medium", over ? "text-red-300" : "text-foreground/45"].join(" ")}>
-                      {display} of {cap}h deep work occupied
-                    </span>
-                    {over && (
-                      <span className="text-xs font-semibold text-red-300">Over capacity</span>
-                    )}
-                  </div>
-                  <div className="h-1.5 rounded-full bg-white/8 overflow-hidden">
-                    <div
-                      className={["h-full rounded-full transition-all duration-500", over ? "bg-red-400" : "bg-primary/70"].join(" ")}
-                      style={{ width: `${pct * 100}%` }}
-                    />
-                  </div>
-                </div>
-              )
-            })()}
-
-            <div className="border-b border-border/40" />
 
             {/* Add form */}
             {isAddingTask && (
@@ -526,18 +548,11 @@ export function PomodoroTimer({ username }: { username: string }) {
                     <option value="medium">🟡 Medium</option>
                     <option value="high">🔴 High</option>
                   </select>
-                  {activeTab === "today" ? (
-                    <select value={newCategory} onChange={e => setNewCategory(e.target.value as Category)} className="border border-border/60 rounded-lg px-2 py-1.5 text-xs bg-background text-foreground">
-                      <option value="work">💼 Work</option>
-                      <option value="study">📖 Study</option>
-                      <option value="personal">🩷 Personal</option>
-                    </select>
-                  ) : (
-                    <select value={newSchedule} onChange={e => setNewSchedule(e.target.value as Schedule)} className="border border-border/60 rounded-lg px-2 py-1.5 text-xs bg-background text-foreground">
-                      <option value="today">☀️ Today</option>
-                      <option value="later">🕐 Later</option>
-                    </select>
-                  )}
+                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as Category)} className="border border-border/60 rounded-lg px-2 py-1.5 text-xs bg-background text-foreground">
+                    <option value="work">💼 Work</option>
+                    <option value="study">📖 Study</option>
+                    <option value="personal">🩷 Personal</option>
+                  </select>
                   <div className="flex gap-1.5 ml-auto">
                     <button onClick={addTask} className="bg-primary text-primary-foreground px-4 py-1.5 rounded-lg text-sm font-semibold hover:brightness-110 transition">Add</button>
                     <button onClick={() => setIsAddingTask(false)} className="text-foreground/50 hover:text-foreground border border-border/40 p-1.5 rounded-lg transition"><X className="w-4 h-4" /></button>
@@ -546,8 +561,8 @@ export function PomodoroTimer({ username }: { username: string }) {
               </div>
             )}
 
-            {/* Task list */}
-            <div className="px-3 py-2.5 space-y-1.5 lg:flex-1 lg:overflow-y-auto no-scrollbar">
+            {/* Task list — simplified, no progress bars */}
+            <div className="px-3 py-2.5 space-y-1 flex-1 lg:overflow-y-auto no-scrollbar">
               {displayTasks.length === 0 && !isAddingTask && (
                 <div className="flex flex-col items-center justify-center py-16 text-foreground/20">
                   <p className="text-4xl mb-2">✓</p>
@@ -558,112 +573,57 @@ export function PomodoroTimer({ username }: { username: string }) {
               {[...displayTasks.filter(t => !t.isCompleted), ...displayTasks.filter(t => t.isCompleted)].map(task => {
                 const isSelected = selectedTaskId === task.id
                 const isConfirm  = confirmDeleteId === task.id
-                const priority   = task.priority ?? "medium"
-                const target     = task.targetMinutes ?? 60
-                const spent      = task.remainingMinutes ?? 0
-                const pct        = Math.min(1, spent / Math.max(1, target))
+                const catTextColor = task.category === "work" ? "text-blue-300" : task.category === "study" ? "text-purple-300" : "text-pink-300"
 
                 return (
                   <div
                     key={task.id}
                     onClick={() => setSelectedTaskId(isSelected ? null : task.id)}
                     className={[
-                      "flex flex-col gap-2 p-3 rounded-xl border cursor-pointer transition-all",
-                      isSelected ? CAT_ACCENT[task.category] + " shadow-sm" : "border-border/40 bg-black/20 hover:bg-black/30 hover:border-border/60",
+                      "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all",
+                      isSelected ? CAT_ACCENT[task.category] + " border" : "hover:bg-white/5 border border-transparent",
                       task.isCompleted ? "opacity-40" : "",
                     ].join(" ")}
                   >
-                    <div className="flex items-center gap-3">
-                      <Checkbox
-                        checked={task.isCompleted}
-                        onClick={e => e.stopPropagation()}
-                        onCheckedChange={() => toggleTask(task.id)}
-                        className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-foreground/50 shrink-0"
-                      />
-                      <div className={["w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")} />
-                      <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/40" : "text-foreground"].join(" ")}>
-                        {task.title}
-                      </span>
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        {activeTab === "today" && (
-                          <span className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border", CAT_CHIP[task.category]].join(" ")}>
-                            {CAT_ICON[task.category]}
-                          </span>
-                        )}
-                        <button
-                          title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
-                          onClick={e => { e.stopPropagation(); toggleSchedule(task.id) }}
-                          className={[
-                            "p-1.5 rounded-lg border transition",
-                            task.schedule === "today"
-                              ? "border-amber-400/40 text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
-                              : "border-border/30 text-foreground/30 hover:text-foreground/60",
-                          ].join(" ")}
-                        >
-                          {task.schedule === "today" ? <Sun className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                        </button>
-                        {isConfirm ? (
-                          <>
-                            <button onClick={e => { e.stopPropagation(); deleteTask(task.id) }} className="text-xs px-2.5 py-1 rounded-lg bg-destructive text-white hover:brightness-110 font-semibold">Yes</button>
-                            <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(null) }} className="text-xs px-2.5 py-1 rounded-lg border border-border text-foreground/50 hover:text-foreground">No</button>
-                          </>
-                        ) : (
-                          <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(task.id) }} className="p-1.5 rounded-lg text-destructive/40 hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition">
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
+                    <Checkbox
+                      checked={task.isCompleted}
+                      onClick={e => e.stopPropagation()}
+                      onCheckedChange={() => toggleTask(task.id)}
+                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-foreground/50 shrink-0"
+                    />
+                    <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/40" : "text-foreground"].join(" ")}>
+                      {task.title}
+                    </span>
+                    <span className={["text-xs font-medium shrink-0", catTextColor].join(" ")}>
+                      {TAB_LABEL[task.category]}
+                    </span>
+                    {isConfirm ? (
+                      <div className="flex gap-1 shrink-0">
+                        <button onClick={e => { e.stopPropagation(); deleteTask(task.id) }} className="text-xs px-2 py-1 rounded-lg bg-destructive text-white hover:brightness-110 font-semibold">Yes</button>
+                        <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(null) }} className="text-xs px-2 py-1 rounded-lg border border-border text-foreground/50 hover:text-foreground">No</button>
                       </div>
-                    </div>
-                    <div className="flex items-center gap-2 pl-7">
-                      <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                        <div className="h-full rounded-full bg-primary/60 transition-all duration-500" style={{ width: `${pct * 100}%` }} />
-                      </div>
-                      <span className="text-xs text-foreground/35 shrink-0 tabular-nums">{fmtMins(spent)} / {fmtMins(target)}</span>
-                    </div>
+                    ) : (
+                      <button
+                        onClick={e => { e.stopPropagation(); setConfirmDeleteId(task.id) }}
+                        className="p-1 rounded-lg text-destructive/40 hover:text-destructive hover:bg-destructive/10 transition shrink-0"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 )
               })}
             </div>
-          </div>
 
-          {/* Weekly focus chart */}
-          <div className="glass rounded-3xl px-5 py-4 shrink-0">
-            <h3 className="text-sm font-semibold text-foreground mb-3">This Week</h3>
-            {weeklyData ? (
-              <div className="flex items-end justify-between gap-2" style={{ height: 90 }}>
-                {(() => {
-                  const maxMin = Math.max(60, ...weeklyData.map(d => d.minutes))
-                  return weeklyData.map((d) => {
-                    const dateObj = new Date(d.date + "T00:00:00")
-                    const dayLabel = dateObj.toLocaleDateString(undefined, { weekday: "short" }).slice(0, 1)
-                    const isToday = d.date === new Date().toISOString().split("T")[0]
-                    const pct = d.minutes / maxMin
-                    const barHeight = Math.max(4, pct * 64)
-                    return (
-                      <div key={d.date} className="flex flex-col items-center gap-1.5 flex-1">
-                        <span className="text-[10px] text-foreground/35 tabular-nums h-3">
-                          {d.minutes > 0 ? fmtMins(d.minutes) : ""}
-                        </span>
-                        <div className="w-full flex items-end justify-center" style={{ height: 64 }}>
-                          <div
-                            className={[
-                              "w-full max-w-[22px] rounded-t-md transition-all duration-500",
-                              isToday ? "bg-primary" : "bg-primary/35",
-                            ].join(" ")}
-                            style={{ height: `${barHeight}px` }}
-                          />
-                        </div>
-                        <span className={["text-xs font-medium", isToday ? "text-primary" : "text-foreground/40"].join(" ")}>
-                          {dayLabel}
-                        </span>
-                      </div>
-                    )
-                  })
-                })()}
-              </div>
-            ) : (
-              <div className="h-[90px] flex items-center justify-center text-foreground/20 text-xs">Loading…</div>
-            )}
+            {/* Bottom Add Task bar */}
+            <div className="px-5 py-3 border-t border-border/30 flex justify-end">
+              <button
+                onClick={() => { setIsAddingTask(true); setNewTitle(""); setNewHours(1); setNewPriority("medium"); setNewSchedule("today"); setNewCategory("work") }}
+                className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm"
+              >
+                <Plus className="w-4 h-4" /> Add Task
+              </button>
+            </div>
           </div>
         </div>
       </main>
