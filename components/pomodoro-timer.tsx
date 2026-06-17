@@ -331,33 +331,35 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false) }} />
       )}
 
-      {/* Greeting card */}
-      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4">
-        <div className="glass rounded-3xl px-6 sm:px-8 py-5 flex items-center justify-between flex-wrap gap-3">
-          <div>
-            <h1 className="text-lg sm:text-xl font-bold text-foreground">
-              {(() => {
-                const h = new Date().getHours()
-                const greeting = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"
-                return `${greeting}, ${username[0].toUpperCase()}${username.slice(1)}!`
-              })()} <span className="inline-block">👋</span>
-            </h1>
-            <p className="text-foreground/40 text-sm mt-0.5">Let&apos;s make today productive!</p>
-          </div>
-          <div className="flex flex-col items-end">
-            <span className="text-base sm:text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
-              DeepWork
-            </span>
-            <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 hidden sm:block">Focus · Flow · Finish</span>
-          </div>
-        </div>
-      </div>
+      {/* Unified dashboard card — greeting + 3-column body, all in one block */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-4">
+        <div className="border border-white/10 rounded-[2.5rem] bg-black/20 backdrop-blur-sm overflow-hidden">
 
-      {/* Body */}
-      <main className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 gap-4">
+          {/* Greeting row */}
+          <div className="px-6 sm:px-8 py-5 flex items-center justify-between flex-wrap gap-3 border-b border-white/8">
+            <div>
+              <h1 className="text-lg sm:text-xl font-bold text-foreground">
+                {(() => {
+                  const h = new Date().getHours()
+                  const greeting = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"
+                  return `${greeting}, ${username[0].toUpperCase()}${username.slice(1)}!`
+                })()} <span className="inline-block">👋</span>
+              </h1>
+              <p className="text-foreground/40 text-sm mt-0.5">Let&apos;s make today productive!</p>
+            </div>
+            <div className="flex flex-col items-end">
+              <span className="text-base sm:text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
+                DeepWork
+              </span>
+              <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 hidden sm:block">Focus · Flow · Finish</span>
+            </div>
+          </div>
 
-        {/* LEFT — Timer sticky on desktop */}
-        <div className="w-full lg:w-[38%] lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col gap-3 lg:py-2">
+          {/* 3-column body */}
+          <div className="flex flex-col lg:flex-row gap-4 p-4 sm:p-6">
+
+        {/* LEFT — Timer */}
+        <div className="w-full lg:w-[38%] flex flex-col gap-3">
 
           {/* Outer rounded container */}
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
@@ -467,7 +469,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* MIDDLE — Today's stats */}
-        <div className="w-full lg:w-[19%] flex flex-col lg:py-2">
+        <div className="w-full lg:w-[19%] flex flex-col">
           <div className="glass rounded-3xl px-4 py-4 flex flex-col items-center gap-3 lg:flex-1">
 
             {(() => {
@@ -535,9 +537,9 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* RIGHT — Tasks (simplified) */}
-        <div className="w-full lg:flex-1 flex flex-col gap-2.5 min-w-0 lg:py-2">
+        <div className="w-full lg:flex-1 flex flex-col gap-2.5 min-w-0">
 
-          <div className="glass rounded-3xl flex flex-col overflow-hidden lg:flex-1 lg:min-h-0">
+          <div className="glass rounded-3xl flex flex-col overflow-hidden">
 
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
@@ -580,7 +582,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             )}
 
             {/* Task list — simplified, no progress bars */}
-            <div className="px-3 py-2.5 space-y-1 flex-1 lg:overflow-y-auto no-scrollbar">
+            <div className="px-3 py-2.5 space-y-1">
               {displayTasks.length === 0 && !isAddingTask && (
                 <div className="flex flex-col items-center justify-center py-16 text-foreground/20">
                   <p className="text-4xl mb-2">✓</p>
@@ -660,6 +662,8 @@ export function PomodoroTimer({ username }: { username: string }) {
             </div>
           </div>
         </div>
+          </div>{/* end 3-column body */}
+        </div>{/* end unified dashboard card */}
       </main>
 
       {/* Footer */}
