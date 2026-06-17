@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut, ListTodo } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut, ListTodo, Target } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -264,19 +264,37 @@ export function PomodoroTimer({ username }: { username: string }) {
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-white/8">
         <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center">
 
-          {/* Profile + Tasks */}
+          {/* Nav: Focus | Tasks | Profile — all same pill style */}
           <div className="flex items-center gap-2">
+            {/* Focus (current page) */}
+            <button
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border bg-primary/15 text-primary border-primary/30"
+            >
+              <Target className="w-4 h-4" />
+              <span className="hidden sm:block">Focus</span>
+            </button>
+
+            {/* Tasks — navigates to dedicated tasks page */}
+            <button
+              onClick={() => router.push("/tasks")}
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border bg-white/6 text-foreground/60 border-white/10 hover:text-foreground/85 hover:bg-white/10"
+            >
+              <ListTodo className="w-4 h-4" />
+              <span className="hidden sm:block">Tasks</span>
+            </button>
+
+            {/* Profile */}
             <div className="relative">
               <button
                 onClick={() => setShowProfile(p => !p)}
-                className="flex items-center gap-2.5 hover:opacity-90 transition-opacity"
+                className="flex items-center gap-2 rounded-full pl-1.5 pr-3 py-1 transition-all border bg-white/6 text-foreground/60 border-white/10 hover:text-foreground/85 hover:bg-white/10"
               >
-                <div className="w-8 h-8 rounded-full bg-primary/90 flex items-center justify-center text-xs font-bold text-primary-foreground shadow-lg shadow-primary/20 ring-2 ring-primary/30">
+                <div className="w-6 h-6 rounded-full bg-primary/90 flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
                   {username[0].toUpperCase()}
                 </div>
-                <span className="text-sm text-foreground/70 font-medium hidden sm:block">{username}</span>
+                <span className="text-sm font-medium hidden sm:block">{username}</span>
               </button>
 
               {showProfile && (
@@ -305,29 +323,6 @@ export function PomodoroTimer({ username }: { username: string }) {
                 </div>
               )}
             </div>
-
-            {/* Tasks — navigates to dedicated tasks page */}
-            <button
-              onClick={() => router.push("/tasks")}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border bg-white/6 text-foreground/60 border-white/10 hover:text-foreground/85 hover:bg-white/10"
-            >
-              <ListTodo className="w-4 h-4" />
-              <span className="hidden sm:block">Tasks</span>
-            </button>
-          </div>
-
-          {/* Brand */}
-          <div className="flex flex-col items-center">
-            <span className="text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
-              DeepWork
-            </span>
-            <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 -mt-0.5 hidden sm:block">Focus · Flow · Finish</span>
-          </div>
-
-          {/* Today */}
-          <div className="text-right">
-            <p className="text-xs text-foreground/35 leading-none mb-0.5 tracking-wide uppercase">Today</p>
-            <p className="text-sm font-bold text-primary">{fmtFocus(dailyMinutes)}</p>
           </div>
         </div>
       </header>
@@ -336,11 +331,33 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false) }} />
       )}
 
+      {/* Greeting card */}
+      <div className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4">
+        <div className="glass rounded-3xl px-6 sm:px-8 py-5 flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h1 className="text-lg sm:text-xl font-bold text-foreground">
+              {(() => {
+                const h = new Date().getHours()
+                const greeting = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"
+                return `${greeting}, ${username[0].toUpperCase()}${username.slice(1)}!`
+              })()} <span className="inline-block">👋</span>
+            </h1>
+            <p className="text-foreground/40 text-sm mt-0.5">Let&apos;s make today productive!</p>
+          </div>
+          <div className="flex flex-col items-end">
+            <span className="text-base sm:text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
+              DeepWork
+            </span>
+            <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 hidden sm:block">Focus · Flow · Finish</span>
+          </div>
+        </div>
+      </div>
+
       {/* Body */}
       <main className="flex-1 flex flex-col lg:flex-row max-w-7xl w-full mx-auto px-4 sm:px-6 py-4 gap-4">
 
         {/* LEFT — Timer sticky on desktop */}
-        <div className="w-full lg:w-[36%] lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col gap-3 lg:py-2">
+        <div className="w-full lg:w-[38%] lg:sticky lg:top-14 lg:self-start lg:h-[calc(100vh-56px)] flex flex-col gap-3 lg:py-2">
 
           {/* Outer rounded container */}
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
@@ -450,8 +467,8 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* MIDDLE — Today's stats */}
-        <div className="w-full lg:w-[22%] flex flex-col lg:py-2">
-          <div className="glass rounded-3xl px-5 py-5 flex flex-col items-center gap-4 lg:flex-1">
+        <div className="w-full lg:w-[19%] flex flex-col lg:py-2">
+          <div className="glass rounded-3xl px-4 py-4 flex flex-col items-center gap-3 lg:flex-1">
 
             {(() => {
               const todayList   = tabTasks("today")
@@ -466,36 +483,36 @@ export function PomodoroTimer({ username }: { username: string }) {
               const sessionsUsed = Math.min(totalSessions, Math.ceil(totalHours))
               const sessionsLeft = Math.max(0, totalSessions - sessionsUsed)
 
-              const ringR = 64, ringStroke = 10, ringCirc = 2 * Math.PI * ringR
+              const ringR = 56, ringStroke = 9, ringCirc = 2 * Math.PI * ringR
               const ringOffset2 = ringCirc * (1 - pct)
 
               return (
                 <>
                   {/* Header */}
                   <div className="text-center">
-                    <h3 className="text-base font-semibold text-foreground">Today&apos;s</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Today&apos;s</h3>
                     <p className="text-xs font-medium text-emerald-400 mt-0.5">{doneCount}/{totalCount} Done</p>
                   </div>
 
                   {/* Focus time */}
                   <div className="text-center">
-                    <p className="text-2xl font-bold text-primary leading-tight">{fmtMins(dailyMinutes)}</p>
+                    <p className="text-xl font-bold text-primary leading-tight">{fmtMins(dailyMinutes)}</p>
                     <p className="text-xs text-foreground/35 mt-0.5">Focus Time</p>
                   </div>
 
                   {/* Capacity ring */}
-                  <div className="relative flex items-center justify-center" style={{ width: 148, height: 148 }}>
-                    <svg width={148} height={148} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
-                      <circle cx={74} cy={74} r={ringR} fill="none" stroke="currentColor" strokeWidth={ringStroke} className="text-white/8" />
+                  <div className="relative flex items-center justify-center" style={{ width: 130, height: 130 }}>
+                    <svg width={130} height={130} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+                      <circle cx={65} cy={65} r={ringR} fill="none" stroke="currentColor" strokeWidth={ringStroke} className="text-white/8" />
                       <circle
-                        cx={74} cy={74} r={ringR}
+                        cx={65} cy={65} r={ringR}
                         fill="none" stroke="currentColor" strokeWidth={ringStroke}
                         strokeDasharray={ringCirc} strokeDashoffset={ringOffset2}
                         strokeLinecap="round"
                         className={["transition-all duration-700", over ? "text-red-400" : "text-primary"].join(" ")}
                       />
                     </svg>
-                    <span className={["relative z-10 text-2xl font-bold", over ? "text-red-300" : "text-foreground"].join(" ")}>
+                    <span className={["relative z-10 text-xl font-bold", over ? "text-red-300" : "text-foreground"].join(" ")}>
                       {percentDisp}%
                     </span>
                   </div>
