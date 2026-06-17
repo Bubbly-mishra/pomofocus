@@ -135,7 +135,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const displayTasks  = tabTasks(activeTab)
   const selectedTask  = tasks.find(t => t.id === selectedTaskId)
   const totalDuration = DURATIONS[mode]
-  const R = 132, STROKE = 6, CIRC = 2 * Math.PI * R
+  const R = 152, STROKE = 6, CIRC = 2 * Math.PI * R
   const ringOffset = CIRC * (timeLeft / totalDuration)
 
   // ── timer ──────────────────────────────────────────────────────────────────
@@ -333,7 +333,7 @@ export function PomodoroTimer({ username }: { username: string }) {
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-2.5">
-        <div className="border border-white/10 rounded-[2.5rem] bg-black/20 backdrop-blur-sm overflow-hidden">
+        <div className="border border-white/10 rounded-[2.5rem] bg-black/30 backdrop-blur-sm overflow-hidden">
 
           {/* Greeting row */}
           <div className="px-6 sm:px-8 py-3.5 flex items-center justify-between flex-wrap gap-3 border-b border-white/8">
@@ -365,20 +365,20 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
 
           {/* Timer card */}
-          <div className="bg-white/3 rounded-2xl px-6 py-5 flex flex-col items-center text-center border border-white/5 relative">
+          <div className="bg-white/6 rounded-2xl px-6 py-5 flex flex-col items-center text-center border border-white/8 relative">
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-4" style={{ width: 290, height: 290 }}>
-              <svg width={290} height={290} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+            <div className="relative flex items-center justify-center mb-4" style={{ width: 330, height: 330 }}>
+              <svg width={330} height={330} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
                 <defs>
                   <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.5" />
                     <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="1" />
                   </linearGradient>
                 </defs>
-                <circle cx={145} cy={145} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/8" />
+                <circle cx={165} cy={165} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/8" />
                 <circle
-                  cx={145} cy={145} r={R}
+                  cx={165} cy={165} r={R}
                   fill="none" stroke="url(#ringGradient)" strokeWidth={STROKE}
                   strokeDasharray={CIRC} strokeDashoffset={ringOffset}
                   strokeLinecap="round"
@@ -425,19 +425,19 @@ export function PomodoroTimer({ username }: { username: string }) {
                 {/* Circular play / pause button */}
                 <button
                   onClick={toggleTimer}
-                  className="mt-1.5 w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-lg"
+                  className="mt-1.5 w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg"
                   style={{
                     background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
                     border: "1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)",
                   }}
                 >
                   {isRunning ? (
-                    <svg width="17" height="17" viewBox="0 0 22 22" fill="none">
+                    <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
                       <rect x="5" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
                       <rect x="13" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
                     </svg>
                   ) : (
-                    <svg width="17" height="17" viewBox="0 0 22 22" fill="none">
+                    <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
                       <path d="M5 3.5v15l13-7.5z" fill="var(--color-foreground)" />
                     </svg>
                   )}
@@ -445,7 +445,6 @@ export function PomodoroTimer({ username }: { username: string }) {
               </div>
             </div>
 
-            <p className="text-foreground/25 text-xs">Space to toggle</p>
           </div>
 
           {/* Active task */}
