@@ -616,14 +616,14 @@ export function PomodoroTimer({ username }: { username: string }) {
                       {task.title}
                     </span>
 
-                    {/* Category icon chip */}
-                    <span className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border shrink-0", CAT_CHIP[task.category]].join(" ")}>
-                      {CAT_ICON[task.category]}
-                    </span>
-
                     {/* Time spent / planned */}
                     <span className="text-xs text-foreground/35 shrink-0 tabular-nums">
                       {fmtMins(spent)} / {fmtMins(target)}
+                    </span>
+
+                    {/* Category icon chip */}
+                    <span className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border shrink-0", CAT_CHIP[task.category]].join(" ")}>
+                      {CAT_ICON[task.category]}
                     </span>
 
                     {/* Kebab menu */}
