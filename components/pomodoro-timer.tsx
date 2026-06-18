@@ -63,16 +63,16 @@ const TAB_ICON: Record<ActiveTab, React.ReactNode> = {
 }
 
 const TAB_ACTIVE: Record<ActiveTab, string> = {
-  today:    "bg-amber-500/20 text-amber-300 border-amber-400/50",
-  work:     "bg-blue-500/20 text-blue-300 border-blue-400/50",
-  study:    "bg-purple-500/20 text-purple-300 border-purple-400/50",
-  personal: "bg-pink-500/20 text-pink-300 border-pink-400/50",
+  today:    "bg-amber-500/20 text-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.12)]",
+  work:     "bg-blue-500/20 text-blue-300 shadow-[0_0_20px_rgba(96,165,250,0.12)]",
+  study:    "bg-purple-500/20 text-purple-300 shadow-[0_0_20px_rgba(192,132,252,0.12)]",
+  personal: "bg-pink-500/20 text-pink-300 shadow-[0_0_20px_rgba(244,114,182,0.12)]",
 }
 
 const CAT_CHIP: Record<Category, string> = {
-  work:     "bg-blue-500/20 text-blue-300 border-blue-400/30",
-  study:    "bg-purple-500/20 text-purple-300 border-purple-400/30",
-  personal: "bg-pink-500/20 text-pink-300 border-pink-400/30",
+  work:     "bg-blue-500/20 text-blue-300",
+  study:    "bg-purple-500/20 text-purple-300",
+  personal: "bg-pink-500/20 text-pink-300",
 }
 
 const CAT_ICON: Record<Category, React.ReactNode> = {
@@ -82,9 +82,9 @@ const CAT_ICON: Record<Category, React.ReactNode> = {
 }
 
 const CAT_ACCENT: Record<Category, string> = {
-  work:     "border-blue-400/50 bg-blue-500/10",
-  study:    "border-purple-400/50 bg-purple-500/10",
-  personal: "border-pink-400/50 bg-pink-500/10",
+  work:     "bg-blue-500/10 shadow-[inset_3px_0_0_rgba(96,165,250,0.65)]",
+  study:    "bg-purple-500/10 shadow-[inset_3px_0_0_rgba(192,132,252,0.65)]",
+  personal: "bg-pink-500/10 shadow-[inset_3px_0_0_rgba(244,114,182,0.65)]",
 }
 
 const fmtTime = (s: number) =>
@@ -279,10 +279,10 @@ export function PomodoroTimer({ username }: { username: string }) {
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-2.5">
-        <div className="border border-white/10 rounded-[2.5rem] bg-black/30 backdrop-blur-sm">
+        <div className="rounded-[2.5rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)]">
 
           {/* Greeting row */}
-          <div className="px-6 sm:px-8 py-2.5 flex items-center justify-between flex-wrap gap-2 border-b border-white/8">
+          <div className="px-6 sm:px-8 py-3 flex items-center justify-between flex-wrap gap-2 bg-white/[0.025] rounded-t-[2.5rem]">
             <div>
               <h1 className="text-lg sm:text-xl font-bold text-foreground">
                 {(() => {
@@ -305,7 +305,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="w-full min-w-0 flex flex-col gap-3">
 
           {/* Outer rounded container */}
-          <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1">
+          <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
 
           {/* Timer card */}
           <div className="bg-white/[0.045] rounded-3xl px-6 py-5 flex flex-col items-center text-center relative">
@@ -404,7 +404,7 @@ export function PomodoroTimer({ username }: { username: string }) {
               </button>
             </div>
           ) : (
-            <div className="glass border-2 border-dashed border-border/30 rounded-2xl px-4 py-3 text-center">
+            <div className="rounded-2xl bg-primary/8 px-4 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <p className="text-xs text-foreground/50">Select a task to start tracking your focus</p>
             </div>
           )}
@@ -484,7 +484,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="glass rounded-3xl flex flex-col">
 
             {/* Panel header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
+            <div className="flex items-center justify-between px-5 pt-4 pb-2">
               <h2 className="font-semibold text-foreground text-base">Today&apos;s Tasks</h2>
               <button
                 onClick={() => router.push("/tasks")}
@@ -496,28 +496,28 @@ export function PomodoroTimer({ username }: { username: string }) {
 
             {/* Add form */}
             {isAddingTask && (
-              <div className="px-5 py-4 border-b border-border/30 bg-black/15 space-y-3">
+              <div className="mx-3 mb-2 rounded-2xl px-4 py-4 bg-black/20 space-y-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
                 <Input
                   value={newTitle} onChange={e => setNewTitle(e.target.value)}
                   placeholder="What are you working on?"
                   onKeyDown={e => { if (e.key === "Enter") addTask(); if (e.key === "Escape") setIsAddingTask(false) }}
-                  autoFocus className="bg-black/20 border-border/60"
+                  autoFocus className="bg-black/20 border-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
                 />
                 <div className="flex gap-2 flex-wrap items-center">
-                  <Input type="number" min={0.25} step={0.25} value={newHours} onChange={e => setNewHours(Number(e.target.value))} className="w-20 text-sm bg-black/20 border-border/60" placeholder="hrs" />
-                  <select value={newPriority} onChange={e => setNewPriority(e.target.value as Priority)} className="border border-border/60 rounded-lg px-2 py-1.5 text-xs bg-background text-foreground">
+                  <Input type="number" min={0.25} step={0.25} value={newHours} onChange={e => setNewHours(Number(e.target.value))} className="w-20 text-sm bg-black/20 border-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" placeholder="hrs" />
+                  <select value={newPriority} onChange={e => setNewPriority(e.target.value as Priority)} className="rounded-lg px-2 py-1.5 text-xs bg-black/25 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                     <option value="low">🟢 Low</option>
                     <option value="medium">🟡 Medium</option>
                     <option value="high">🔴 High</option>
                   </select>
-                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as Category)} className="border border-border/60 rounded-lg px-2 py-1.5 text-xs bg-background text-foreground">
+                  <select value={newCategory} onChange={e => setNewCategory(e.target.value as Category)} className="rounded-lg px-2 py-1.5 text-xs bg-black/25 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                     <option value="work">💼 Work</option>
                     <option value="study">📖 Study</option>
                     <option value="personal">🩷 Personal</option>
                   </select>
                   <div className="flex gap-1.5 ml-auto">
                     <button onClick={addTask} className="bg-primary text-primary-foreground px-4 py-1.5 rounded-lg text-sm font-semibold hover:brightness-110 transition">Add</button>
-                    <button onClick={() => setIsAddingTask(false)} className="text-foreground/50 hover:text-foreground border border-border/40 p-1.5 rounded-lg transition"><X className="w-4 h-4" /></button>
+                    <button onClick={() => setIsAddingTask(false)} className="text-foreground/50 hover:text-foreground hover:bg-white/8 p-1.5 rounded-lg transition"><X className="w-4 h-4" /></button>
                   </div>
                 </div>
               </div>
@@ -545,7 +545,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                     onClick={() => setSelectedTaskId(isSelected ? null : task.id)}
                     className={[
                       "flex items-center gap-2.5 px-3 py-3 rounded-xl cursor-pointer transition-all relative",
-                      isSelected ? CAT_ACCENT[task.category] + " border" : "hover:bg-white/5 border border-transparent",
+                      isSelected ? CAT_ACCENT[task.category] : "hover:bg-white/5",
                       task.isCompleted ? "opacity-40" : "",
                     ].join(" ")}
                   >
@@ -569,7 +569,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                     </span>
 
                     {/* Category icon chip */}
-                    <span title={TAB_LABEL[task.category]} aria-label={`${TAB_LABEL[task.category]} category`} className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border shrink-0", CAT_CHIP[task.category]].join(" ")}>
+                    <span title={TAB_LABEL[task.category]} aria-label={`${TAB_LABEL[task.category]} category`} className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full shrink-0", CAT_CHIP[task.category]].join(" ")}>
                       {CAT_ICON[task.category]}
                     </span>
 
@@ -612,7 +612,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             </div>
 
             {/* Bottom Add Task bar */}
-            <div className="px-5 py-3 border-t border-border/30 flex justify-end">
+            <div className="px-5 pt-2 pb-3 flex justify-end">
               <button
                 onClick={() => { setIsAddingTask(true); setNewTitle(""); setNewHours(1); setNewPriority("medium"); setNewSchedule("today"); setNewCategory("work") }}
                 className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm"

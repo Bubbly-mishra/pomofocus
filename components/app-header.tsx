@@ -55,10 +55,10 @@ export function AppHeader({ activePage, focusMinutes, username }: { activePage: 
   const profileActive = showProfile
 
   return (
-    <header className="sticky top-0 z-30 shadow-[0_8px_30px_rgba(0,0,0,0.18)]">
+    <header className="sticky top-0 z-30 shadow-[0_14px_38px_rgba(0,0,0,0.2)]">
       <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center">
-        <div className="flex items-center gap-1 rounded-full bg-black/20 p-1 shadow-inner shadow-black/20">
+        <div className="flex items-center gap-1 rounded-full bg-black/18 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_30px_rgba(0,0,0,0.22)]">
           <button type="button" onClick={() => router.push("/")} className={navItem(activePage === "focus")}>
             <Target className="w-4 h-4" />
             <span className="hidden sm:block">DeepWork</span>
@@ -97,7 +97,6 @@ export function AppHeader({ activePage, focusMinutes, username }: { activePage: 
                     <p className="text-xs text-foreground/50 mt-0.5">DeepWork</p>
                   </div>
                 </div>
-                <div className="h-px bg-white/8" />
                 <div>
                   <p className="text-xs text-foreground/50 mb-1">Today&apos;s focus</p>
                   <p className="text-2xl font-bold text-primary">{fmtFocus(displayedFocus)}</p>

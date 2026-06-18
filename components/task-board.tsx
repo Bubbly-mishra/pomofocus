@@ -77,8 +77,8 @@ export function TaskBoard() {
               key={tab}
               onClick={() => { setActiveTab(tab); setIsAddingTask(false) }}
               className={[
-                "flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all whitespace-nowrap shrink-0",
-                isActive ? TAB_ACTIVE[tab] : "border-white/10 bg-white/6 text-foreground/60 hover:text-foreground/85 hover:bg-white/10 hover:border-white/20",
+                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap shrink-0",
+                isActive ? TAB_ACTIVE[tab] : "bg-white/6 text-foreground/60 hover:text-foreground/85 hover:bg-white/10",
               ].join(" ")}
             >
               {TAB_ICON[tab]}
@@ -140,39 +140,37 @@ export function TaskBoard() {
           )
         })()}
 
-        <div className="border-b border-border/40" />
-
         {/* Add form */}
         {isAddingTask && (
-          <div className="px-5 py-4 border-b border-border/30 bg-black/15 space-y-3">
+          <div className="mx-3 mb-2 rounded-2xl px-4 py-4 bg-black/20 space-y-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
             <Input
               value={newTitle} onChange={e => setNewTitle(e.target.value)}
               placeholder="What are you working on?"
               onKeyDown={e => { if (e.key === "Enter") addTask(); if (e.key === "Escape") setIsAddingTask(false) }}
-              autoFocus className="bg-black/20 border-border/60"
+              autoFocus className="bg-black/20 border-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]"
             />
             <div className="flex gap-2 flex-wrap items-center">
-              <Input type="number" min={0.25} step={0.25} value={newHours} onChange={e => setNewHours(Number(e.target.value))} className="w-20 text-sm bg-black/20 border-border/60" placeholder="hrs" />
-              <select value={newPriority} onChange={e => setNewPriority(e.target.value as Priority)} className="border border-border/60 rounded-lg px-2 py-1.5 text-xs bg-background text-foreground">
+              <Input type="number" min={0.25} step={0.25} value={newHours} onChange={e => setNewHours(Number(e.target.value))} className="w-20 text-sm bg-black/20 border-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]" placeholder="hrs" />
+              <select value={newPriority} onChange={e => setNewPriority(e.target.value as Priority)} className="rounded-lg px-2 py-1.5 text-xs bg-black/25 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                 <option value="low">🟢 Low</option>
                 <option value="medium">🟡 Medium</option>
                 <option value="high">🔴 High</option>
               </select>
               {activeTab === "today" ? (
-                <select value={newCategory} onChange={e => setNewCategory(e.target.value as Category)} className="border border-border/60 rounded-lg px-2 py-1.5 text-xs bg-background text-foreground">
+                <select value={newCategory} onChange={e => setNewCategory(e.target.value as Category)} className="rounded-lg px-2 py-1.5 text-xs bg-black/25 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                   <option value="work">💼 Work</option>
                   <option value="study">📖 Study</option>
                   <option value="personal">🩷 Personal</option>
                 </select>
               ) : (
-                <select value={newSchedule} onChange={e => setNewSchedule(e.target.value as Schedule)} className="border border-border/60 rounded-lg px-2 py-1.5 text-xs bg-background text-foreground">
+                <select value={newSchedule} onChange={e => setNewSchedule(e.target.value as Schedule)} className="rounded-lg px-2 py-1.5 text-xs bg-black/25 text-foreground shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
                   <option value="today">☀️ Today</option>
                   <option value="later">🕐 Later</option>
                 </select>
               )}
               <div className="flex gap-1.5 ml-auto">
                 <button onClick={addTask} className="bg-primary text-primary-foreground px-4 py-1.5 rounded-lg text-sm font-semibold hover:brightness-110 transition">Add</button>
-                <button onClick={() => setIsAddingTask(false)} className="text-foreground/50 hover:text-foreground border border-border/40 p-1.5 rounded-lg transition"><X className="w-4 h-4" /></button>
+                <button onClick={() => setIsAddingTask(false)} className="text-foreground/50 hover:text-foreground hover:bg-white/8 p-1.5 rounded-lg transition"><X className="w-4 h-4" /></button>
               </div>
             </div>
           </div>
@@ -198,8 +196,8 @@ export function TaskBoard() {
               <div
                 key={task.id}
                 className={[
-                  "flex flex-col gap-2 p-3 rounded-xl border transition-all",
-                  "border-border/40 bg-black/20 hover:bg-black/30 hover:border-border/60",
+                  "flex flex-col gap-2 p-3 rounded-xl transition-all",
+                  "bg-black/18 hover:bg-black/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]",
                   task.isCompleted ? "opacity-40" : "",
                 ].join(" ")}
               >
@@ -215,7 +213,7 @@ export function TaskBoard() {
                   </span>
                   <div className="flex items-center gap-1.5 shrink-0">
                     {activeTab === "today" && (
-                      <span className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border", CAT_CHIP[task.category]].join(" ")}>
+                      <span className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full", CAT_CHIP[task.category]].join(" ")}>
                         {CAT_ICON[task.category]}
                       </span>
                     )}
@@ -223,10 +221,10 @@ export function TaskBoard() {
                       title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
                       onClick={() => toggleSchedule(task.id)}
                       className={[
-                        "p-1.5 rounded-lg border transition",
+                        "p-1.5 rounded-lg transition",
                         task.schedule === "today"
-                          ? "border-amber-400/40 text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
-                          : "border-border/30 text-foreground/50 hover:text-foreground/75",
+                          ? "text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
+                          : "text-foreground/50 hover:text-foreground/75 hover:bg-white/8",
                       ].join(" ")}
                     >
                       {task.schedule === "today" ? <Sun className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
@@ -234,10 +232,10 @@ export function TaskBoard() {
                     {isConfirm ? (
                       <>
                         <button onClick={() => deleteTask(task.id)} className="text-xs px-2.5 py-1 rounded-lg bg-destructive text-white hover:brightness-110 font-semibold">Yes</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-2.5 py-1 rounded-lg border border-border text-foreground/50 hover:text-foreground">No</button>
+                        <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-2.5 py-1 rounded-lg bg-white/6 text-foreground/50 hover:text-foreground hover:bg-white/10">No</button>
                       </>
                     ) : (
-                      <button onClick={() => setConfirmDeleteId(task.id)} className="p-1.5 rounded-lg text-destructive/40 hover:text-destructive hover:bg-destructive/10 border border-transparent hover:border-destructive/20 transition">
+                      <button onClick={() => setConfirmDeleteId(task.id)} className="p-1.5 rounded-lg text-destructive/40 hover:text-destructive hover:bg-destructive/10 transition">
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
                     )}

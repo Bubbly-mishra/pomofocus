@@ -34,16 +34,16 @@ export const TAB_ICON: Record<ActiveTab, React.ReactNode> = {
 }
 
 export const TAB_ACTIVE: Record<ActiveTab, string> = {
-  today:    "bg-amber-500/20 text-amber-300 border-amber-400/50",
-  work:     "bg-blue-500/20 text-blue-300 border-blue-400/50",
-  study:    "bg-purple-500/20 text-purple-300 border-purple-400/50",
-  personal: "bg-pink-500/20 text-pink-300 border-pink-400/50",
+  today:    "bg-amber-500/20 text-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.12)]",
+  work:     "bg-blue-500/20 text-blue-300 shadow-[0_0_20px_rgba(96,165,250,0.12)]",
+  study:    "bg-purple-500/20 text-purple-300 shadow-[0_0_20px_rgba(192,132,252,0.12)]",
+  personal: "bg-pink-500/20 text-pink-300 shadow-[0_0_20px_rgba(244,114,182,0.12)]",
 }
 
 export const CAT_CHIP: Record<Category, string> = {
-  work:     "bg-blue-500/20 text-blue-300 border-blue-400/30",
-  study:    "bg-purple-500/20 text-purple-300 border-purple-400/30",
-  personal: "bg-pink-500/20 text-pink-300 border-pink-400/30",
+  work:     "bg-blue-500/20 text-blue-300",
+  study:    "bg-purple-500/20 text-purple-300",
+  personal: "bg-pink-500/20 text-pink-300",
 }
 
 export const CAT_ICON: Record<Category, React.ReactNode> = {
@@ -53,9 +53,9 @@ export const CAT_ICON: Record<Category, React.ReactNode> = {
 }
 
 export const CAT_ACCENT: Record<Category, string> = {
-  work:     "border-blue-400/50 bg-blue-500/10",
-  study:    "border-purple-400/50 bg-purple-500/10",
-  personal: "border-pink-400/50 bg-pink-500/10",
+  work:     "bg-blue-500/10 shadow-[inset_3px_0_0_rgba(96,165,250,0.65)]",
+  study:    "bg-purple-500/10 shadow-[inset_3px_0_0_rgba(192,132,252,0.65)]",
+  personal: "bg-pink-500/10 shadow-[inset_3px_0_0_rgba(244,114,182,0.65)]",
 }
 
 export const fmtMins = (m = 0) => {

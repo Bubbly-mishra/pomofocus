@@ -1,14 +1,12 @@
 "use client"
 
 import { useState } from "react"
-import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
 import { AppBrand } from "@/components/app-brand"
 import { AppFooter } from "@/components/app-footer"
 import { Target } from "lucide-react"
 
 export default function LoginPage() {
-  const router = useRouter()
   const [mode, setMode] = useState<"login" | "register">("login")
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
@@ -34,7 +32,7 @@ export default function LoginPage() {
     <div className="hills min-h-screen flex flex-col">
 
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-white/8">
+      <header className="sticky top-0 z-30 shadow-[0_14px_38px_rgba(0,0,0,0.2)]">
         <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
         <div className="relative max-w-7xl mx-auto px-6 h-12 flex items-center justify-center">
           <AppBrand />
@@ -47,7 +45,7 @@ export default function LoginPage() {
 
           {/* Icon + title */}
           <div className="text-center">
-            <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/10 text-primary">
+            <div className="w-14 h-14 rounded-2xl bg-primary/15 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/10 text-primary">
               <Target className="w-7 h-7" />
             </div>
             <h1 className="text-xl font-bold text-foreground mb-1">
@@ -66,7 +64,7 @@ export default function LoginPage() {
               onChange={e => setUsername(e.target.value)}
               onKeyDown={e => e.key === "Enter" && submit()}
               autoFocus
-              className="bg-black/20 border-white/12 placeholder:text-foreground/30 h-11"
+              className="bg-black/20 border-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] placeholder:text-foreground/30 h-11"
             />
             <Input
               type="password"
@@ -74,10 +72,10 @@ export default function LoginPage() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               onKeyDown={e => e.key === "Enter" && submit()}
-              className="bg-black/20 border-white/12 placeholder:text-foreground/30 h-11"
+              className="bg-black/20 border-transparent shadow-[inset_0_1px_0_rgba(255,255,255,0.045)] placeholder:text-foreground/30 h-11"
             />
             {error && (
-              <p className="text-red-400 text-xs text-center bg-red-400/10 border border-red-400/20 rounded-lg py-2 px-3">{error}</p>
+              <p className="text-red-400 text-xs text-center bg-red-400/10 rounded-lg py-2 px-3">{error}</p>
             )}
             <button
               onClick={submit}
