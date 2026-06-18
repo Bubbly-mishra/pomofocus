@@ -3,6 +3,9 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Input } from "@/components/ui/input"
+import { AppBrand } from "@/components/app-brand"
+import { AppFooter } from "@/components/app-footer"
+import { Target } from "lucide-react"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -33,13 +36,8 @@ export default function LoginPage() {
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-white/8">
         <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
-        <div className="relative max-w-7xl mx-auto px-6 h-14 flex items-center justify-center">
-          <div className="flex flex-col items-center">
-            <span className="text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
-              DeepWork
-            </span>
-            <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 -mt-0.5">Focus · Flow · Finish</span>
-          </div>
+        <div className="relative max-w-7xl mx-auto px-6 h-12 flex items-center justify-center">
+          <AppBrand />
         </div>
       </header>
 
@@ -49,13 +47,13 @@ export default function LoginPage() {
 
           {/* Icon + title */}
           <div className="text-center">
-            <div className="w-14 h-14 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/10">
-              <span className="text-2xl">⏱</span>
+            <div className="w-14 h-14 rounded-2xl bg-primary/15 border border-primary/30 flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/10 text-primary">
+              <Target className="w-7 h-7" />
             </div>
             <h1 className="text-xl font-bold text-foreground mb-1">
               {mode === "login" ? "Welcome back" : "Create account"}
             </h1>
-            <p className="text-foreground/40 text-sm">
+            <p className="text-foreground/55 text-sm">
               {mode === "login" ? "Sign in to your workspace." : "Choose a username to get started."}
             </p>
           </div>
@@ -91,7 +89,7 @@ export default function LoginPage() {
           </div>
 
           {/* Toggle */}
-          <p className="text-foreground/40 text-sm text-center">
+          <p className="text-foreground/55 text-sm text-center">
             {mode === "login" ? "New here? " : "Already have an account? "}
             <button
               onClick={() => { setMode(mode === "login" ? "register" : "login"); setError("") }}
@@ -103,15 +101,7 @@ export default function LoginPage() {
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative border-t border-white/8">
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-xl" />
-        <div className="relative max-w-7xl mx-auto px-6 h-12 flex items-center justify-between">
-          <span className="text-xs text-foreground/25">© {new Date().getFullYear()} DeepWork</span>
-          <span className="text-xs text-foreground/20">Made with ❤️ for Doyel</span>
-          <span className="text-xs text-foreground/25 tracking-widest uppercase">Stay focused.</span>
-        </div>
-      </footer>
+      <AppFooter />
     </div>
   )
 }

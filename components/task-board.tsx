@@ -78,7 +78,7 @@ export function TaskBoard() {
               onClick={() => { setActiveTab(tab); setIsAddingTask(false) }}
               className={[
                 "flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-semibold transition-all whitespace-nowrap shrink-0",
-                isActive ? TAB_ACTIVE[tab] : "border-border/40 text-foreground/40 hover:text-foreground/70 hover:border-border/70",
+                isActive ? TAB_ACTIVE[tab] : "border-white/10 bg-white/6 text-foreground/60 hover:text-foreground/85 hover:bg-white/10 hover:border-white/20",
               ].join(" ")}
             >
               {TAB_ICON[tab]}
@@ -100,7 +100,7 @@ export function TaskBoard() {
         <div className="flex items-center justify-between px-5 py-3 gap-3">
           <div className="shrink-0">
             <h2 className="font-semibold text-foreground text-base">{TAB_LABEL[activeTab]}</h2>
-            <p className="text-xs text-foreground/40 mt-0.5">
+            <p className="text-xs text-foreground/55 mt-0.5">
               {displayTasks.filter(t => !t.isCompleted).length === 0
                 ? (displayTasks.length > 0 ? "All done 🎉" : "No tasks yet")
                 : `${displayTasks.filter(t => !t.isCompleted).length} remaining`}
@@ -125,7 +125,7 @@ export function TaskBoard() {
           return (
             <div className="px-5 pb-3 -mt-1">
               <div className="flex items-center justify-between mb-1.5">
-                <span className={["text-xs font-medium", over ? "text-red-300" : "text-foreground/45"].join(" ")}>
+                <span className={["text-xs font-medium", over ? "text-red-300" : "text-foreground/55"].join(" ")}>
                   {display} of {cap}h deep work occupied
                 </span>
                 {over && <span className="text-xs font-semibold text-red-300">Over capacity</span>}
@@ -181,7 +181,7 @@ export function TaskBoard() {
         {/* Task list */}
         <div className="px-3 py-2.5 space-y-1.5">
           {displayTasks.length === 0 && !isAddingTask && (
-            <div className="flex flex-col items-center justify-center py-16 text-foreground/20">
+            <div className="flex flex-col items-center justify-center py-16 text-foreground/40">
               <p className="text-4xl mb-2">✓</p>
               <p className="text-sm">Nothing here yet</p>
             </div>
@@ -210,7 +210,7 @@ export function TaskBoard() {
                     className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-foreground/50 shrink-0"
                   />
                   <div className={["w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")} />
-                  <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/40" : "text-foreground"].join(" ")}>
+                  <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/50" : "text-foreground"].join(" ")}>
                     {task.title}
                   </span>
                   <div className="flex items-center gap-1.5 shrink-0">
@@ -226,7 +226,7 @@ export function TaskBoard() {
                         "p-1.5 rounded-lg border transition",
                         task.schedule === "today"
                           ? "border-amber-400/40 text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
-                          : "border-border/30 text-foreground/30 hover:text-foreground/60",
+                          : "border-border/30 text-foreground/50 hover:text-foreground/75",
                       ].join(" ")}
                     >
                       {task.schedule === "today" ? <Sun className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
@@ -247,7 +247,7 @@ export function TaskBoard() {
                   <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
                     <div className="h-full rounded-full bg-primary/60 transition-all duration-500" style={{ width: `${pct * 100}%` }} />
                   </div>
-                  <span className="text-xs text-foreground/35 shrink-0 tabular-nums">{fmtMins(spent)} / {fmtMins(target)}</span>
+                  <span className="text-xs text-foreground/55 shrink-0 tabular-nums">{fmtMins(spent)} / {fmtMins(target)}</span>
                 </div>
               </div>
             )

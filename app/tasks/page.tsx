@@ -1,6 +1,8 @@
 import { redirect } from "next/navigation"
 import { getSession } from "@/lib/auth"
 import { TaskBoard } from "@/components/task-board"
+import { AppBrand } from "@/components/app-brand"
+import { AppFooter } from "@/components/app-footer"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 
@@ -13,21 +15,16 @@ export default async function TasksPage() {
       {/* Header */}
       <header className="sticky top-0 z-30 border-b border-white/8">
         <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
           <Link
             href="/"
-            className="flex items-center gap-2 text-sm text-foreground/60 hover:text-foreground/90 transition-colors"
+            className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium border border-white/10 bg-white/6 text-foreground/60 hover:text-foreground/90 hover:bg-white/10 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             <span className="hidden sm:block">Back to Timer</span>
           </Link>
 
-          <div className="flex flex-col items-center">
-            <span className="text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
-              DeepWork
-            </span>
-            <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 -mt-0.5 hidden sm:block">All Tasks</span>
-          </div>
+          <AppBrand subtitle="All Tasks" />
 
           <div className="w-24" />
         </div>
@@ -38,15 +35,7 @@ export default async function TasksPage() {
         <TaskBoard />
       </main>
 
-      {/* Footer */}
-      <footer className="relative border-t border-white/8 mt-auto">
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-xl" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
-          <span className="text-xs text-foreground/25 tracking-wide">© {new Date().getFullYear()} DeepWork</span>
-          <span className="text-xs text-foreground/20">Made with ❤️ for Doyel</span>
-          <span className="text-xs text-foreground/25 tracking-widest uppercase">Stay focused.</span>
-        </div>
-      </footer>
+      <AppFooter />
     </div>
   )
 }

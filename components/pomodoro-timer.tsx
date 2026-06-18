@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { AppBrand } from "@/components/app-brand"
+import { AppFooter } from "@/components/app-footer"
 import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut, ListTodo, Target, MoreVertical } from "lucide-react"
 import useSWR from "swr"
 
@@ -366,10 +368,7 @@ export function PomodoroTimer({ username }: { username: string }) {
               <p className="text-foreground/55 text-sm mt-0.5">Let&apos;s make today productive!</p>
             </div>
             <div className="flex flex-col items-end">
-              <span className="text-base sm:text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
-                DeepWork
-              </span>
-              <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/45 hidden sm:block">Focus · Flow · Finish</span>
+              <AppBrand />
             </div>
           </div>
 
@@ -696,15 +695,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>{/* end unified dashboard card */}
       </main>
 
-      {/* Footer */}
-      <footer className="relative border-t border-white/8 mt-auto">
-        <div className="absolute inset-0 bg-black/30 backdrop-blur-xl" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
-          <span className="text-xs text-foreground/45 tracking-wide">© {new Date().getFullYear()} DeepWork</span>
-          <span className="text-xs text-foreground/40">Made with ❤️ for Doyel</span>
-          <span className="text-xs text-foreground/45 tracking-widest uppercase">Stay focused.</span>
-        </div>
-      </footer>
+      <AppFooter />
     </div>
   )
 }
