@@ -367,7 +367,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
 
           {/* Timer card */}
-          <div className="bg-white/6 rounded-2xl px-6 py-5 flex flex-col items-center text-center border border-white/8 relative">
+          <div className="bg-white/6 rounded-2xl px-6 py-5 flex flex-col items-center text-center relative">
 
             {/* Ring + clock */}
             <div className="relative flex items-center justify-center mb-4" style={{ width: 310, height: 310 }}>
@@ -389,7 +389,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                 />
               </svg>
 
-              <div className="relative z-10 flex flex-col items-center gap-2.5">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 z-10">
                 <span className="text-7xl font-bold font-mono tabular-nums tracking-tighter text-foreground">
                   {fmtTime(timeLeft)}
                 </span>
@@ -398,7 +398,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                 <div className="relative">
                   <button
                     onClick={() => setShowModeMenu(p => !p)}
-                    className="flex items-center gap-1.5 text-sm text-foreground/70 hover:text-foreground/90 transition-colors bg-white/6 hover:bg-white/10 border border-white/10 rounded-full px-3.5 py-1.5"
+                    className="flex items-center gap-1.5 text-sm text-foreground/70 hover:text-foreground/90 transition-colors bg-white/8 hover:bg-white/12 rounded-full px-3.5 py-1.5"
                   >
                     {MODE_LABEL[mode]}
                     <svg width="12" height="12" viewBox="0 0 12 12" className={["transition-transform", showModeMenu ? "rotate-180" : ""].join(" ")}>
@@ -430,7 +430,6 @@ export function PomodoroTimer({ username }: { username: string }) {
                   className="mt-1.5 w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
                   style={{
                     background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
-                    border: "1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)",
                   }}
                 >
                   {isRunning ? (
