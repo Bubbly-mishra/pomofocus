@@ -282,15 +282,15 @@ export function PomodoroTimer({ username }: { username: string }) {
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
       {/* Header */}
-      <header className="sticky top-0 z-30 border-b border-white/8">
+      <header className="sticky top-0 z-30 shadow-[0_8px_30px_rgba(0,0,0,0.18)]">
         <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center">
 
-          {/* Nav: Focus | Tasks | Profile — all same pill style */}
-          <div className="flex items-center gap-2">
+          {/* Primary navigation */}
+          <div className="flex items-center gap-1 rounded-full bg-black/20 p-1 shadow-inner shadow-black/20">
             {/* Focus (current page) */}
             <button
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border bg-primary/15 text-primary border-primary/30"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold bg-primary/15 text-primary shadow-sm shadow-primary/10 transition-all"
             >
               <Target className="w-4 h-4" />
               <span className="hidden sm:block">Focus</span>
@@ -299,7 +299,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             {/* Tasks — navigates to dedicated tasks page */}
             <button
               onClick={() => router.push("/tasks")}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium transition-all border bg-white/6 text-foreground/60 border-white/10 hover:text-foreground/85 hover:bg-white/10"
+              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-foreground/60 hover:text-foreground/90 hover:bg-white/8 transition-all"
             >
               <ListTodo className="w-4 h-4" />
               <span className="hidden sm:block">Tasks</span>
@@ -309,7 +309,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             <div className="relative">
               <button
                 onClick={() => setShowProfile(p => !p)}
-                className="flex items-center gap-2 rounded-full pl-1.5 pr-3 py-1 transition-all border bg-white/6 text-foreground/60 border-white/10 hover:text-foreground/85 hover:bg-white/10"
+                className="flex items-center gap-2 rounded-full pl-1.5 pr-3 py-1 text-foreground/60 hover:text-foreground/90 hover:bg-white/8 transition-all"
               >
                 <div className="w-6 h-6 rounded-full bg-primary/90 flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
                   {username[0].toUpperCase()}
@@ -373,10 +373,10 @@ export function PomodoroTimer({ username }: { username: string }) {
           </div>
 
           {/* 3-column body */}
-          <div className="flex flex-col lg:flex-row gap-3 p-3 sm:p-4">
+          <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] gap-3 p-3 sm:p-4 items-stretch">
 
         {/* LEFT — Timer */}
-        <div className="w-full lg:w-[37%] flex flex-col gap-3">
+        <div className="w-full min-w-0 flex flex-col gap-3">
 
           {/* Outer rounded container */}
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
@@ -486,8 +486,8 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* MIDDLE — Today's stats */}
-        <div className="w-full lg:w-[17%] flex flex-col">
-          <div className="glass rounded-3xl px-4 py-4 flex flex-col items-center gap-3 lg:flex-1">
+        <div className="w-full min-w-0 flex flex-col">
+          <div className="glass rounded-3xl px-3 py-5 flex flex-col items-center justify-between gap-4 lg:h-full">
 
             {(() => {
               const todayList   = tabTasks("today")
@@ -500,7 +500,7 @@ export function PomodoroTimer({ username }: { username: string }) {
               const percentDisp = Math.round(pct * 100)
               const capacityLeft = Math.max(0, cap - totalHours)
 
-              const ringR = 56, ringStroke = 9, ringCirc = 2 * Math.PI * ringR
+              const ringR = 48, ringStroke = 8, ringCirc = 2 * Math.PI * ringR
               const ringOffset2 = ringCirc * (1 - pct)
 
               return (
@@ -518,11 +518,11 @@ export function PomodoroTimer({ username }: { username: string }) {
                   </div>
 
                   {/* Capacity ring */}
-                  <div className="relative flex items-center justify-center" style={{ width: 130, height: 130 }}>
-                    <svg width={130} height={130} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
-                      <circle cx={65} cy={65} r={ringR} fill="none" stroke="currentColor" strokeWidth={ringStroke} className="text-white/8" />
+                  <div className="relative flex items-center justify-center" style={{ width: 112, height: 112 }}>
+                    <svg width={112} height={112} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+                      <circle cx={56} cy={56} r={ringR} fill="none" stroke="currentColor" strokeWidth={ringStroke} className="text-white/8" />
                       <circle
-                        cx={65} cy={65} r={ringR}
+                        cx={56} cy={56} r={ringR}
                         fill="none" stroke="currentColor" strokeWidth={ringStroke}
                         strokeDasharray={ringCirc} strokeDashoffset={ringOffset2}
                         strokeLinecap="round"
@@ -537,11 +537,11 @@ export function PomodoroTimer({ username }: { username: string }) {
 
                   {/* Remaining planning capacity */}
                   {over ? (
-                    <div className="bg-red-500/10 border border-red-400/30 rounded-2xl px-4 py-2.5 text-center w-full">
+                    <div className="bg-red-500/10 rounded-2xl px-2 py-2.5 text-center w-full">
                       <p className="text-xs font-semibold text-red-300">Over capacity</p>
                     </div>
                   ) : (
-                    <div className="bg-white/4 border border-white/10 rounded-2xl px-4 py-2.5 text-center w-full">
+                    <div className="bg-white/6 rounded-2xl px-2 py-2.5 text-center w-full">
                       <p className="text-lg font-bold text-foreground leading-tight">{fmtMins(capacityLeft * 60)}</p>
                       <p className="text-xs text-foreground/55">of {cap}h capacity left</p>
                     </div>
@@ -553,7 +553,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* RIGHT — Tasks (simplified) */}
-        <div className="w-full lg:flex-1 flex flex-col gap-2.5 min-w-0">
+        <div className="w-full min-w-0 flex flex-col gap-2.5">
 
           <div className="glass rounded-3xl flex flex-col">
 
