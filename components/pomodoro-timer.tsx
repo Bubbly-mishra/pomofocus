@@ -335,7 +335,7 @@ export function PomodoroTimer({ username }: { username: string }) {
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-2.5">
-        <div className="border border-white/10 rounded-[2.5rem] bg-black/30 backdrop-blur-sm overflow-hidden">
+        <div className="border border-white/10 rounded-[2.5rem] bg-black/30 backdrop-blur-sm">
 
           {/* Greeting row */}
           <div className="px-6 sm:px-8 py-3.5 flex items-center justify-between flex-wrap gap-3 border-b border-white/8">
@@ -389,7 +389,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                 />
               </svg>
 
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5 z-10">
+              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5">
                 <span className="text-7xl font-bold font-mono tabular-nums tracking-tighter text-foreground">
                   {fmtTime(timeLeft)}
                 </span>
@@ -539,7 +539,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         {/* RIGHT — Tasks (simplified) */}
         <div className="w-full lg:flex-1 flex flex-col gap-2.5 min-w-0">
 
-          <div className="glass rounded-3xl flex flex-col overflow-hidden">
+          <div className="glass rounded-3xl flex flex-col">
 
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 py-4 border-b border-border/40">
