@@ -132,7 +132,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const displayTasks  = tabTasks(activeTab)
   const selectedTask  = tasks.find(t => t.id === selectedTaskId)
   const totalDuration = DURATIONS[mode]
-  const R = 140, STROKE = 6, CIRC = 2 * Math.PI * R
+  const R = 154, STROKE = 6, CIRC = 2 * Math.PI * R
   const ringOffset = CIRC * (timeLeft / totalDuration)
 
   // ── timer ──────────────────────────────────────────────────────────────────
@@ -278,8 +278,8 @@ export function PomodoroTimer({ username }: { username: string }) {
       )}
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 py-2.5">
-        <div className="rounded-[2.5rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)]">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-3 flex">
+        <div className="w-full min-h-[calc(100vh-8rem)] rounded-[2.5rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col">
 
           {/* Greeting row */}
           <div className="px-6 sm:px-8 py-3 flex items-center justify-between flex-wrap gap-2 bg-white/[0.025] rounded-t-[2.5rem]">
@@ -299,7 +299,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           </div>
 
           {/* 3-column body */}
-          <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] gap-3 p-3 sm:p-4 items-stretch">
+          <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] gap-3 p-3 sm:p-4 items-stretch">
 
         {/* LEFT — Timer */}
         <div className="w-full min-w-0 flex flex-col gap-3">
@@ -308,20 +308,20 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
 
           {/* Timer card */}
-          <div className="bg-white/[0.045] rounded-3xl px-6 py-5 flex flex-col items-center text-center relative">
+          <div className="bg-white/[0.04] rounded-3xl px-6 py-5 flex flex-1 flex-col items-center justify-center text-center relative">
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-4" style={{ width: 310, height: 310 }}>
-              <svg width={310} height={310} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+            <div className="relative flex items-center justify-center mb-4" style={{ width: 340, height: 340 }}>
+              <svg width={340} height={340} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
                 <defs>
                   <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.5" />
                     <stop offset="100%" stopColor="var(--color-primary)" stopOpacity="1" />
                   </linearGradient>
                 </defs>
-                <circle cx={155} cy={155} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/8" />
+                <circle cx={170} cy={170} r={R} fill="none" stroke="currentColor" strokeWidth={STROKE} className="text-white/8" />
                 <circle
-                  cx={155} cy={155} r={R}
+                  cx={170} cy={170} r={R}
                   fill="none" stroke="url(#ringGradient)" strokeWidth={STROKE}
                   strokeDasharray={CIRC} strokeDashoffset={ringOffset}
                   strokeLinecap="round"
@@ -413,7 +413,7 @@ export function PomodoroTimer({ username }: { username: string }) {
 
         {/* MIDDLE — Today's stats */}
         <div className="w-full min-w-0 flex flex-col">
-          <div className="glass rounded-3xl px-3 py-5 flex flex-col items-center justify-between gap-4 lg:h-full">
+          <div className="rounded-3xl bg-white/[0.025] px-3 py-5 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col items-center justify-between gap-4 lg:h-full">
 
             {(() => {
               const todayList   = tabTasks("today")
@@ -481,7 +481,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         {/* RIGHT — Tasks (simplified) */}
         <div className="w-full min-w-0 flex flex-col gap-2.5">
 
-          <div className="glass rounded-3xl flex flex-col">
+          <div className="rounded-3xl bg-white/[0.025] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col lg:h-full">
 
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 pt-4 pb-2">
@@ -551,7 +551,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                   >
                     <span
                       title={`${priority[0].toUpperCase()}${priority.slice(1)} priority`}
-                      className={["w-1 h-8 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")}
+                      className={["w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")}
                     />
                     <Checkbox
                       checked={task.isCompleted}

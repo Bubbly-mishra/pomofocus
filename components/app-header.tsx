@@ -46,10 +46,10 @@ export function AppHeader({ activePage, focusMinutes, username }: { activePage: 
   }
 
   const navItem = (active: boolean) => [
-    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm transition-all",
+    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm border border-transparent transition-all",
     active
-      ? "bg-primary/15 text-primary font-semibold shadow-[0_0_22px_rgba(207,236,245,0.18)]"
-      : "text-foreground/60 hover:text-foreground/90 hover:bg-white/8 font-medium",
+      ? "border-primary/20 bg-primary/10 text-primary font-semibold shadow-[0_0_18px_rgba(207,236,245,0.12)]"
+      : "text-foreground/60 hover:text-foreground/90 hover:bg-white/6 font-medium",
   ].join(" ")
 
   const profileActive = showProfile
@@ -58,7 +58,7 @@ export function AppHeader({ activePage, focusMinutes, username }: { activePage: 
     <header className="sticky top-0 z-30 shadow-[0_14px_38px_rgba(0,0,0,0.2)]">
       <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
       <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center">
-        <div className="flex items-center gap-1 rounded-full bg-black/18 p-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_10px_30px_rgba(0,0,0,0.22)]">
+        <div className="flex items-center gap-1 rounded-full bg-black/12 p-1">
           <button type="button" onClick={() => router.push("/")} className={navItem(activePage === "focus")}>
             <Target className="w-4 h-4" />
             <span className="hidden sm:block">DeepWork</span>
@@ -74,10 +74,10 @@ export function AppHeader({ activePage, focusMinutes, username }: { activePage: 
               type="button"
               onClick={event => { event.stopPropagation(); setShowProfile(p => !p) }}
               className={[
-                "flex items-center gap-2 rounded-full pl-1.5 pr-3 py-1 transition-all",
+                "flex items-center gap-2 rounded-full border border-transparent pl-1.5 pr-3 py-1 transition-all",
                 profileActive
-                  ? "bg-primary/15 text-primary shadow-[0_0_22px_rgba(207,236,245,0.18)]"
-                  : "text-foreground/60 hover:text-foreground/90 hover:bg-white/8",
+                  ? "border-primary/20 bg-primary/10 text-primary shadow-[0_0_18px_rgba(207,236,245,0.12)]"
+                  : "text-foreground/60 hover:text-foreground/90 hover:bg-white/6",
               ].join(" ")}
             >
               <div className="w-6 h-6 rounded-full bg-primary/90 flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
