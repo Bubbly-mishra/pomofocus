@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut, ListTodo, Target } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut, ListTodo, Target, MoreVertical } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -114,7 +114,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const [newSchedule,     setNewSchedule]     = useState<Schedule>("today")
   const [newCategory,     setNewCategory]     = useState<Category>("work")
   const [dailyMinutes,    setDailyMinutes]    = useState(0)
-  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
+  const [openMenuId,      setOpenMenuId]      = useState<string | null>(null)
   const [showProfile,     setShowProfile]     = useState(false)
   const [showModeMenu,    setShowModeMenu]    = useState(false)
 
@@ -248,7 +248,6 @@ export function PomodoroTimer({ username }: { username: string }) {
   }
 
   const deleteTask = async (id: string) => {
-    setConfirmDeleteId(null)
     if (selectedTaskId === id) setSelectedTaskId(null)
     const next = tasks.filter(t => t.id !== id)
     await mutate(async () => { await fetch(`/api/tasks/${id}`, { method: "DELETE" }); return next }, { optimisticData: next, revalidate: true })
@@ -330,8 +329,8 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
       </header>
 
-      {(showProfile || showModeMenu) && (
-        <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false) }} />
+      {(showProfile || showModeMenu || openMenuId) && (
+        <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false); setOpenMenuId(null) }} />
       )}
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
@@ -391,7 +390,7 @@ export function PomodoroTimer({ username }: { username: string }) {
               </svg>
 
               <div className="relative z-10 flex flex-col items-center gap-2.5">
-                <span className="text-6xl font-bold font-mono tabular-nums tracking-tighter text-foreground">
+                <span className="text-7xl font-bold font-mono tabular-nums tracking-tighter text-foreground">
                   {fmtTime(timeLeft)}
                 </span>
 
@@ -428,19 +427,19 @@ export function PomodoroTimer({ username }: { username: string }) {
                 {/* Circular play / pause button */}
                 <button
                   onClick={toggleTimer}
-                  className="mt-1.5 w-20 h-20 rounded-full flex items-center justify-center transition-all shadow-lg"
+                  className="mt-1.5 w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
                   style={{
                     background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
                     border: "1px solid color-mix(in oklab, var(--color-primary) 45%, transparent)",
                   }}
                 >
                   {isRunning ? (
-                    <svg width="28" height="28" viewBox="0 0 22 22" fill="none">
+                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
                       <rect x="5" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
                       <rect x="13" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
                     </svg>
                   ) : (
-                    <svg width="36" height="36" viewBox="0 0 22 22" fill="none">
+                    <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
                       <path d="M5 3.5v15l13-7.5z" fill="var(--color-foreground)" />
                     </svg>
                   )}
@@ -594,14 +593,16 @@ export function PomodoroTimer({ username }: { username: string }) {
 
               {[...displayTasks.filter(t => !t.isCompleted), ...displayTasks.filter(t => t.isCompleted)].map(task => {
                 const isSelected = selectedTaskId === task.id
-                const isConfirm  = confirmDeleteId === task.id
+                const isMenuOpen = openMenuId === task.id
+                const spent = task.remainingMinutes ?? 0
+                const target = task.targetMinutes ?? 60
 
                 return (
                   <div
                     key={task.id}
                     onClick={() => setSelectedTaskId(isSelected ? null : task.id)}
                     className={[
-                      "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all",
+                      "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all relative",
                       isSelected ? CAT_ACCENT[task.category] + " border" : "hover:bg-white/5 border border-transparent",
                       task.isCompleted ? "opacity-40" : "",
                     ].join(" ")}
@@ -621,32 +622,39 @@ export function PomodoroTimer({ username }: { username: string }) {
                       {CAT_ICON[task.category]}
                     </span>
 
-                    {/* Today schedule glow badge */}
+                    {/* Time spent / planned */}
+                    <span className="text-xs text-foreground/35 shrink-0 tabular-nums">
+                      {fmtMins(spent)} / {fmtMins(target)}
+                    </span>
+
+                    {/* Kebab menu */}
                     <button
-                      title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
-                      onClick={e => { e.stopPropagation(); toggleSchedule(task.id) }}
-                      className={[
-                        "p-1.5 rounded-lg border transition shrink-0",
-                        task.schedule === "today"
-                          ? "border-amber-400/40 text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
-                          : "border-border/30 text-foreground/30 hover:text-foreground/60",
-                      ].join(" ")}
+                      onClick={e => { e.stopPropagation(); setOpenMenuId(isMenuOpen ? null : task.id) }}
+                      className="p-1 rounded-lg text-foreground/30 hover:text-foreground/70 hover:bg-white/8 transition shrink-0"
                     >
-                      {task.schedule === "today" ? <Sun className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
+                      <MoreVertical className="w-4 h-4" />
                     </button>
 
-                    {isConfirm ? (
-                      <div className="flex gap-1 shrink-0">
-                        <button onClick={e => { e.stopPropagation(); deleteTask(task.id) }} className="text-xs px-2 py-1 rounded-lg bg-destructive text-white hover:brightness-110 font-semibold">Yes</button>
-                        <button onClick={e => { e.stopPropagation(); setConfirmDeleteId(null) }} className="text-xs px-2 py-1 rounded-lg border border-border text-foreground/50 hover:text-foreground">No</button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={e => { e.stopPropagation(); setConfirmDeleteId(task.id) }}
-                        className="p-1 rounded-lg text-destructive/40 hover:text-destructive hover:bg-destructive/10 transition shrink-0"
+                    {isMenuOpen && (
+                      <div
+                        onClick={e => e.stopPropagation()}
+                        className="absolute top-10 right-3 w-44 glass rounded-xl p-1.5 flex flex-col gap-0.5 z-50"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                        <button
+                          onClick={() => { toggleSchedule(task.id); setOpenMenuId(null) }}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground/70 hover:bg-white/6 hover:text-foreground/90 transition-colors text-left"
+                        >
+                          {task.schedule === "today" ? <Clock className="w-3.5 h-3.5" /> : <Sun className="w-3.5 h-3.5" />}
+                          {task.schedule === "today" ? "Move to Later" : "Move to Today"}
+                        </button>
+                        <button
+                          onClick={() => { deleteTask(task.id); setOpenMenuId(null) }}
+                          className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive/70 hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          Delete
+                        </button>
+                      </div>
                     )}
                   </div>
                 )
