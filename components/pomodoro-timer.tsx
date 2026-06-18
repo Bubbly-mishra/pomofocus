@@ -363,13 +363,13 @@ export function PomodoroTimer({ username }: { username: string }) {
                   return `${greeting}, ${username[0].toUpperCase()}${username.slice(1)}!`
                 })()} <span className="inline-block">👋</span>
               </h1>
-              <p className="text-foreground/40 text-sm mt-0.5">Let&apos;s make today productive!</p>
+              <p className="text-foreground/55 text-sm mt-0.5">Let&apos;s make today productive!</p>
             </div>
             <div className="flex flex-col items-end">
               <span className="text-base sm:text-lg font-bold tracking-widest uppercase text-transparent bg-clip-text bg-gradient-to-r from-primary/90 via-foreground to-primary/90">
                 DeepWork
               </span>
-              <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/30 hidden sm:block">Focus · Flow · Finish</span>
+              <span className="text-[10px] tracking-[0.2em] uppercase text-foreground/45 hidden sm:block">Focus · Flow · Finish</span>
             </div>
           </div>
 
@@ -377,7 +377,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="flex flex-col lg:flex-row gap-3 p-3 sm:p-4">
 
         {/* LEFT — Timer */}
-        <div className="w-full lg:w-[38%] flex flex-col gap-3">
+        <div className="w-full lg:w-[37%] flex flex-col gap-3">
 
           {/* Outer rounded container */}
           <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
@@ -405,60 +405,62 @@ export function PomodoroTimer({ username }: { username: string }) {
                 />
               </svg>
 
-              <div className="absolute inset-0 flex flex-col items-center justify-center gap-2.5">
-                <span className="text-7xl font-bold font-mono tabular-nums tracking-tighter text-foreground">
-                  {fmtTime(timeLeft)}
-                </span>
+              <div className="absolute inset-0 grid place-items-center">
+                <div className="flex flex-col items-center justify-center gap-4">
+                  <span className="block text-center text-7xl leading-none font-bold font-mono tabular-nums tracking-tighter text-foreground">
+                    {fmtTime(timeLeft)}
+                  </span>
 
-                {/* Mode dropdown trigger */}
-                <div className="relative">
+                  {/* Mode dropdown trigger */}
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowModeMenu(p => !p)}
+                      className="flex items-center gap-1.5 text-sm text-foreground/70 hover:text-foreground/90 transition-colors bg-white/8 hover:bg-white/12 rounded-full px-3.5 py-1.5"
+                    >
+                      {MODE_LABEL[mode]}
+                      <svg width="12" height="12" viewBox="0 0 12 12" className={["transition-transform", showModeMenu ? "rotate-180" : ""].join(" ")}>
+                        <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </button>
+
+                    {showModeMenu && (
+                      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50">
+                        {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
+                          <button
+                            key={m}
+                            onClick={() => { handleModeChange(m); setShowModeMenu(false) }}
+                            className={[
+                              "px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors",
+                              mode === m ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
+                            ].join(" ")}
+                          >
+                            {MODE_LABEL[m]}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Circular play / pause button */}
                   <button
-                    onClick={() => setShowModeMenu(p => !p)}
-                    className="flex items-center gap-1.5 text-sm text-foreground/70 hover:text-foreground/90 transition-colors bg-white/8 hover:bg-white/12 rounded-full px-3.5 py-1.5"
+                    onClick={toggleTimer}
+                    className="w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
+                    style={{
+                      background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
+                    }}
                   >
-                    {MODE_LABEL[mode]}
-                    <svg width="12" height="12" viewBox="0 0 12 12" className={["transition-transform", showModeMenu ? "rotate-180" : ""].join(" ")}>
-                      <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
+                    {isRunning ? (
+                      <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
+                        <rect x="5" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
+                        <rect x="13" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
+                      </svg>
+                    ) : (
+                      <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
+                        <path d="M5 3.5v15l13-7.5z" fill="var(--color-foreground)" />
+                      </svg>
+                    )}
                   </button>
-
-                  {showModeMenu && (
-                    <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50">
-                      {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
-                        <button
-                          key={m}
-                          onClick={() => { handleModeChange(m); setShowModeMenu(false) }}
-                          className={[
-                            "px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors",
-                            mode === m ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
-                          ].join(" ")}
-                        >
-                          {MODE_LABEL[m]}
-                        </button>
-                      ))}
-                    </div>
-                  )}
                 </div>
-
-                {/* Circular play / pause button */}
-                <button
-                  onClick={toggleTimer}
-                  className="mt-1.5 w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
-                  style={{
-                    background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
-                  }}
-                >
-                  {isRunning ? (
-                    <svg width="22" height="22" viewBox="0 0 22 22" fill="none">
-                      <rect x="5" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
-                      <rect x="13" y="4" width="4" height="14" rx="1.5" fill="var(--color-foreground)" />
-                    </svg>
-                  ) : (
-                    <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
-                      <path d="M5 3.5v15l13-7.5z" fill="var(--color-foreground)" />
-                    </svg>
-                  )}
-                </button>
               </div>
             </div>
 
@@ -478,14 +480,14 @@ export function PomodoroTimer({ username }: { username: string }) {
             </div>
           ) : (
             <div className="glass border-2 border-dashed border-border/30 rounded-2xl px-4 py-3 text-center">
-              <p className="text-xs text-foreground/30">Tap a task on the right to track it</p>
+              <p className="text-xs text-foreground/50">Select a task to start tracking your focus</p>
             </div>
           )}
           </div>{/* end outer rounded container */}
         </div>
 
         {/* MIDDLE — Today's stats */}
-        <div className="w-full lg:w-[19%] flex flex-col">
+        <div className="w-full lg:w-[17%] flex flex-col">
           <div className="glass rounded-3xl px-4 py-4 flex flex-col items-center gap-3 lg:flex-1">
 
             {(() => {
@@ -494,12 +496,10 @@ export function PomodoroTimer({ username }: { username: string }) {
               const totalCount  = todayList.length
               const totalHours  = todayList.reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
               const cap         = 6
-              const totalSessions = 6
               const pct         = Math.min(1, totalHours / cap)
               const over        = totalHours > cap
               const percentDisp = Math.round(pct * 100)
-              const sessionsUsed = Math.min(totalSessions, Math.ceil(totalHours))
-              const sessionsLeft = Math.max(0, totalSessions - sessionsUsed)
+              const capacityLeft = Math.max(0, cap - totalHours)
 
               const ringR = 56, ringStroke = 9, ringCirc = 2 * Math.PI * ringR
               const ringOffset2 = ringCirc * (1 - pct)
@@ -508,14 +508,14 @@ export function PomodoroTimer({ username }: { username: string }) {
                 <>
                   {/* Header */}
                   <div className="text-center">
-                    <h3 className="text-sm font-semibold text-foreground">Today&apos;s</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Today&apos;s Plan</h3>
                     <p className="text-xs font-medium text-emerald-400 mt-0.5">{doneCount}/{totalCount} Done</p>
                   </div>
 
                   {/* Focus time */}
                   <div className="text-center">
                     <p className="text-xl font-bold text-primary leading-tight">{fmtMins(dailyMinutes)}</p>
-                    <p className="text-xs text-foreground/35 mt-0.5">Focus Time</p>
+                    <p className="text-xs text-foreground/55 mt-0.5">Focus completed</p>
                   </div>
 
                   {/* Capacity ring */}
@@ -530,20 +530,21 @@ export function PomodoroTimer({ username }: { username: string }) {
                         className={["transition-all duration-700", over ? "text-red-400" : "text-primary"].join(" ")}
                       />
                     </svg>
-                    <span className={["relative z-10 text-xl font-bold", over ? "text-red-300" : "text-foreground"].join(" ")}>
-                      {percentDisp}%
-                    </span>
+                    <div className="relative z-10 flex flex-col items-center leading-none">
+                      <span className={["text-xl font-bold", over ? "text-red-300" : "text-foreground"].join(" ")}>{percentDisp}%</span>
+                      <span className="text-[10px] text-foreground/50 mt-1.5">planned</span>
+                    </div>
                   </div>
 
-                  {/* Sessions left / over capacity chip */}
+                  {/* Remaining planning capacity */}
                   {over ? (
                     <div className="bg-red-500/10 border border-red-400/30 rounded-2xl px-4 py-2.5 text-center w-full">
                       <p className="text-xs font-semibold text-red-300">Over capacity</p>
                     </div>
                   ) : (
                     <div className="bg-white/4 border border-white/10 rounded-2xl px-4 py-2.5 text-center w-full">
-                      <p className="text-lg font-bold text-foreground leading-tight">{sessionsLeft} <span className="text-foreground/30 text-sm font-medium">/ {totalSessions}</span></p>
-                      <p className="text-xs text-foreground/35">Session{sessionsLeft === 1 ? "" : "s"} Left</p>
+                      <p className="text-lg font-bold text-foreground leading-tight">{fmtMins(capacityLeft * 60)}</p>
+                      <p className="text-xs text-foreground/55">of {cap}h capacity left</p>
                     </div>
                   )}
                 </>
@@ -617,7 +618,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                     key={task.id}
                     onClick={() => setSelectedTaskId(isSelected ? null : task.id)}
                     className={[
-                      "flex items-center gap-3 px-3 py-3 rounded-xl cursor-pointer transition-all relative",
+                      "flex items-center gap-2.5 px-3 py-3 rounded-xl cursor-pointer transition-all relative",
                       isSelected ? CAT_ACCENT[task.category] + " border" : "hover:bg-white/5 border border-transparent",
                       task.isCompleted ? "opacity-40" : "",
                     ].join(" ")}
@@ -628,17 +629,17 @@ export function PomodoroTimer({ username }: { username: string }) {
                       onCheckedChange={() => toggleTask(task.id)}
                       className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-foreground/50 shrink-0"
                     />
-                    <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/40" : "text-foreground"].join(" ")}>
+                    <span title={task.title} className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/50" : "text-foreground"].join(" ")}>
                       {task.title}
                     </span>
 
                     {/* Time spent / planned */}
-                    <span className="text-xs text-foreground/35 shrink-0 tabular-nums">
+                    <span className="text-xs text-foreground/55 shrink-0 tabular-nums">
                       {fmtMins(spent)} / {fmtMins(target)}
                     </span>
 
                     {/* Category icon chip */}
-                    <span className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border shrink-0", CAT_CHIP[task.category]].join(" ")}>
+                    <span title={TAB_LABEL[task.category]} aria-label={`${TAB_LABEL[task.category]} category`} className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full border shrink-0", CAT_CHIP[task.category]].join(" ")}>
                       {CAT_ICON[task.category]}
                     </span>
 
@@ -699,9 +700,9 @@ export function PomodoroTimer({ username }: { username: string }) {
       <footer className="relative border-t border-white/8 mt-auto">
         <div className="absolute inset-0 bg-black/30 backdrop-blur-xl" />
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
-          <span className="text-xs text-foreground/25 tracking-wide">© {new Date().getFullYear()} DeepWork</span>
-          <span className="text-xs text-foreground/20">Made with ❤️ for Doyel</span>
-          <span className="text-xs text-foreground/25 tracking-widest uppercase">Stay focused.</span>
+          <span className="text-xs text-foreground/45 tracking-wide">© {new Date().getFullYear()} DeepWork</span>
+          <span className="text-xs text-foreground/40">Made with ❤️ for Doyel</span>
+          <span className="text-xs text-foreground/45 tracking-widest uppercase">Stay focused.</span>
         </div>
       </footer>
     </div>
