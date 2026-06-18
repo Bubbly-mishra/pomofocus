@@ -103,9 +103,9 @@
     z-index: -1;
     background: linear-gradient(
       160deg,
-      color-mix(in oklab, var(--color-background) 60%, transparent) 0%,
-      color-mix(in oklab, var(--color-background) 72%, transparent) 50%,
-      color-mix(in oklab, var(--color-background) 82%, transparent) 100%
+      color-mix(in oklab, var(--color-background) 72%, transparent) 0%,
+      color-mix(in oklab, var(--color-background) 80%, transparent) 50%,
+      color-mix(in oklab, var(--color-background) 88%, transparent) 100%
     );
   }
 

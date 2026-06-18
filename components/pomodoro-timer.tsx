@@ -356,7 +356,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="border border-white/10 rounded-[2.5rem] bg-black/30 backdrop-blur-sm">
 
           {/* Greeting row */}
-          <div className="px-6 sm:px-8 py-3.5 flex items-center justify-between flex-wrap gap-3 border-b border-white/8">
+          <div className="px-6 sm:px-8 py-2.5 flex items-center justify-between flex-wrap gap-2 border-b border-white/8">
             <div>
               <h1 className="text-lg sm:text-xl font-bold text-foreground">
                 {(() => {
@@ -365,7 +365,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                   return `${greeting}, ${username[0].toUpperCase()}${username.slice(1)}!`
                 })()} <span className="inline-block">👋</span>
               </h1>
-              <p className="text-foreground/55 text-sm mt-0.5">Let&apos;s make today productive!</p>
+              <p className="text-foreground/55 text-xs mt-0.5">Let&apos;s make today productive!</p>
             </div>
             <div className="flex flex-col items-end">
               <AppBrand />
@@ -379,10 +379,10 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="w-full min-w-0 flex flex-col gap-3">
 
           {/* Outer rounded container */}
-          <div className="border border-white/8 rounded-[2.5rem] bg-black/20 backdrop-blur-sm p-4 flex flex-col gap-3 lg:flex-1">
+          <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1">
 
           {/* Timer card */}
-          <div className="bg-white/6 rounded-2xl px-6 py-5 flex flex-col items-center text-center relative">
+          <div className="bg-white/[0.045] rounded-3xl px-6 py-5 flex flex-col items-center text-center relative">
 
             {/* Ring + clock */}
             <div className="relative flex items-center justify-center mb-4" style={{ width: 310, height: 310 }}>
@@ -405,7 +405,7 @@ export function PomodoroTimer({ username }: { username: string }) {
               </svg>
 
               <div className="absolute inset-0 grid place-items-center">
-                <div className="flex flex-col items-center justify-center gap-4">
+                <div className="flex translate-y-3 flex-col items-center justify-center gap-5">
                   <span className="block text-center text-7xl leading-none font-bold font-mono tabular-nums tracking-tighter text-foreground">
                     {fmtTime(timeLeft)}
                   </span>
@@ -609,6 +609,7 @@ export function PomodoroTimer({ username }: { username: string }) {
               {[...displayTasks.filter(t => !t.isCompleted), ...displayTasks.filter(t => t.isCompleted)].map(task => {
                 const isSelected = selectedTaskId === task.id
                 const isMenuOpen = openMenuId === task.id
+                const priority = task.priority ?? "medium"
                 const spent = task.remainingMinutes ?? 0
                 const target = task.targetMinutes ?? 60
 
@@ -622,6 +623,10 @@ export function PomodoroTimer({ username }: { username: string }) {
                       task.isCompleted ? "opacity-40" : "",
                     ].join(" ")}
                   >
+                    <span
+                      title={`${priority[0].toUpperCase()}${priority.slice(1)} priority`}
+                      className={["w-1 h-8 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")}
+                    />
                     <Checkbox
                       checked={task.isCompleted}
                       onClick={e => e.stopPropagation()}
