@@ -137,10 +137,13 @@ export function PomodoroTimer({ username }: { username: string }) {
 
   // ── timer ──────────────────────────────────────────────────────────────────
   const handleModeChange = useCallback((m: TimerMode) => {
+    const nextDuration = DURATIONS[m]
+
+    setShowModeMenu(false)
     endTimeRef.current = null
     setIsRunning(false)
     setMode(m)
-    setTimeLeft(DURATIONS[m])
+    setTimeLeft(nextDuration)
   }, [])
 
   const toggleTimer = useCallback(() => {
@@ -353,7 +356,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                         {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
                           <button
                             key={m}
-                            onClick={() => { handleModeChange(m); setShowModeMenu(false) }}
+                            onClick={() => handleModeChange(m)}
                             className={[
                               "px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors",
                               mode === m ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
