@@ -4,9 +4,10 @@ import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { AppHeader } from "@/components/app-header"
 import { AppBrand } from "@/components/app-brand"
 import { AppFooter } from "@/components/app-footer"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, LogOut, ListTodo, Target, MoreVertical } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, MoreVertical } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -97,11 +98,6 @@ const fmtMins = (m = 0) => {
   return `${h}h ${r}m`
 }
 
-const fmtFocus = (m = 0) => {
-  const mm = Math.max(0, Math.round(m))
-  return `${Math.floor(mm / 60)}.${String(mm % 60).padStart(2, "0")}h`
-}
-
 export function PomodoroTimer({ username }: { username: string }) {
   const router = useRouter()
   const [mode,            setMode]            = useState<TimerMode>("pomodoro")
@@ -117,7 +113,6 @@ export function PomodoroTimer({ username }: { username: string }) {
   const [newCategory,     setNewCategory]     = useState<Category>("work")
   const [dailyMinutes,    setDailyMinutes]    = useState(0)
   const [openMenuId,      setOpenMenuId]      = useState<string | null>(null)
-  const [showProfile,     setShowProfile]     = useState(false)
   const [showModeMenu,    setShowModeMenu]    = useState(false)
 
   const audioRef   = useRef<HTMLAudioElement | null>(null)
@@ -271,84 +266,15 @@ export function PomodoroTimer({ username }: { username: string }) {
     await mutate(async () => { await fetch(`/api/tasks/${id}`, { method: "DELETE" }); return next }, { optimisticData: next, revalidate: true })
   }
 
-  const signOut = async () => {
-    await fetch("/api/auth/logout", { method: "POST" })
-    window.location.href = "/login"
-  }
-
   // ── render ─────────────────────────────────────────────────────────────────
   return (
     <div className="hills min-h-screen flex flex-col text-foreground">
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
-      {/* Header */}
-      <header className="sticky top-0 z-30 shadow-[0_8px_30px_rgba(0,0,0,0.18)]">
-        <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/25 to-black/40 backdrop-blur-xl" />
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 h-12 flex items-center">
+      <AppHeader activePage="focus" focusMinutes={dailyMinutes} username={username} />
 
-          {/* Primary navigation */}
-          <div className="flex items-center gap-1 rounded-full bg-black/20 p-1 shadow-inner shadow-black/20">
-            {/* Focus (current page) */}
-            <button
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-semibold bg-primary/15 text-primary shadow-sm shadow-primary/10 transition-all"
-            >
-              <Target className="w-4 h-4" />
-              <span className="hidden sm:block">Focus</span>
-            </button>
-
-            {/* Tasks — navigates to dedicated tasks page */}
-            <button
-              onClick={() => router.push("/tasks")}
-              className="flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm font-medium text-foreground/60 hover:text-foreground/90 hover:bg-white/8 transition-all"
-            >
-              <ListTodo className="w-4 h-4" />
-              <span className="hidden sm:block">Tasks</span>
-            </button>
-
-            {/* Profile */}
-            <div className="relative">
-              <button
-                onClick={() => setShowProfile(p => !p)}
-                className="flex items-center gap-2 rounded-full pl-1.5 pr-3 py-1 text-foreground/60 hover:text-foreground/90 hover:bg-white/8 transition-all"
-              >
-                <div className="w-6 h-6 rounded-full bg-primary/90 flex items-center justify-center text-xs font-bold text-primary-foreground shrink-0">
-                  {username[0].toUpperCase()}
-                </div>
-                <span className="text-sm font-medium hidden sm:block">{username}</span>
-              </button>
-
-              {showProfile && (
-                <div className="absolute top-12 left-0 w-60 glass rounded-2xl p-5 flex flex-col gap-4 z-50">
-                  <div className="flex items-center gap-3">
-                    <div className="w-11 h-11 rounded-full bg-primary/80 flex items-center justify-center text-lg font-bold text-primary-foreground shadow-lg shadow-primary/20">
-                      {username[0].toUpperCase()}
-                    </div>
-                    <div>
-                      <p className="text-sm font-semibold text-foreground">{username}</p>
-                      <p className="text-xs text-foreground/40 mt-0.5">DeepWork</p>
-                    </div>
-                  </div>
-                  <div className="h-px bg-white/8" />
-                  <div>
-                    <p className="text-xs text-foreground/40 mb-1">Today&apos;s focus</p>
-                    <p className="text-2xl font-bold text-primary">{fmtFocus(dailyMinutes)}</p>
-                  </div>
-                  <button
-                    onClick={signOut}
-                    className="flex items-center gap-2 text-sm text-foreground/50 hover:text-destructive transition-colors group"
-                  >
-                    <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
-                    Sign out
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {(showProfile || showModeMenu) && (
-        <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false); setOpenMenuId(null) }} />
+      {showModeMenu && (
+        <div className="fixed inset-0 z-40" onClick={() => { setShowModeMenu(false); setOpenMenuId(null) }} />
       )}
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
