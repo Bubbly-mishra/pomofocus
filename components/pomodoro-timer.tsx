@@ -218,6 +218,22 @@ export function PomodoroTimer({ username }: { username: string }) {
     document.title = isRunning ? `${fmtTime(timeLeft)} — ${MODE_LABEL[mode]}` : "DeepWork"
   }, [timeLeft, isRunning, mode])
 
+  useEffect(() => {
+    if (!openMenuId) return
+
+    const closeMenu = () => setOpenMenuId(null)
+    const closeMenuOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeMenu()
+    }
+
+    document.addEventListener("click", closeMenu)
+    document.addEventListener("keydown", closeMenuOnEscape)
+    return () => {
+      document.removeEventListener("click", closeMenu)
+      document.removeEventListener("keydown", closeMenuOnEscape)
+    }
+  }, [openMenuId])
+
   // ── mutations ──────────────────────────────────────────────────────────────
   const patchTask = useCallback(async (id: string, patch: object) => {
     const opt = tasks.map(t => t.id === id ? { ...t, ...patch } : t)
@@ -329,7 +345,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
       </header>
 
-      {(showProfile || showModeMenu || openMenuId) && (
+      {(showProfile || showModeMenu) && (
         <div className="fixed inset-0 z-40" onClick={() => { setShowProfile(false); setShowModeMenu(false); setOpenMenuId(null) }} />
       )}
 
@@ -628,6 +644,9 @@ export function PomodoroTimer({ username }: { username: string }) {
 
                     {/* Kebab menu */}
                     <button
+                      type="button"
+                      aria-label={`Open actions for ${task.title}`}
+                      aria-expanded={isMenuOpen}
                       onClick={e => { e.stopPropagation(); setOpenMenuId(isMenuOpen ? null : task.id) }}
                       className="p-1 rounded-lg text-foreground/30 hover:text-foreground/70 hover:bg-white/8 transition shrink-0"
                     >
@@ -647,7 +666,8 @@ export function PomodoroTimer({ username }: { username: string }) {
                           {task.schedule === "today" ? "Move to Later" : "Move to Today"}
                         </button>
                         <button
-                          onClick={() => { deleteTask(task.id); setOpenMenuId(null) }}
+                          type="button"
+                          onClick={() => { void deleteTask(task.id); setOpenMenuId(null) }}
                           className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-destructive/70 hover:bg-destructive/10 hover:text-destructive transition-colors text-left"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
