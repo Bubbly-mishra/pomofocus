@@ -361,7 +361,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             <div className="absolute inset-x-4 sm:inset-x-10 top-4 sm:top-8 h-12 sm:h-20 rounded-full bg-primary/10 blur-3xl" />
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center h-[min(35vh,220px)] sm:h-[min(42vh,300px)] md:h-[min(48vh,370px)] w-[min(35vh,220px)] sm:w-[min(42vh,300px)] md:w-[min(48vh,370px)]">
+            <div className="relative flex items-center justify-center h-[min(40vh,260px)] sm:h-[min(46vh,340px)] md:h-[min(52vh,410px)] w-[min(40vh,260px)] sm:w-[min(46vh,340px)] md:w-[min(52vh,410px)]">
               <svg viewBox="0 0 340 340" className="absolute h-full w-full -rotate-90">
                 <defs>
                   <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
