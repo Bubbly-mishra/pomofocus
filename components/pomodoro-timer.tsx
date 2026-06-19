@@ -305,14 +305,14 @@ export function PomodoroTimer({ username }: { username: string }) {
 
   // ── render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="hills h-screen min-h-0 flex flex-col text-foreground overflow-hidden">
+    <div className="hills min-h-screen lg:h-screen lg:min-h-0 flex flex-col text-foreground lg:overflow-hidden">
       <audio ref={audioRef} src={ALARM_SOUND_SRC} preload="auto" aria-hidden="true" />
 
       <AppHeader activePage="focus" focusMinutes={dailyMinutes} username={username} />
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
-      <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-2.5 sm:px-4 md:px-6 pt-2 sm:pt-3 pb-2 sm:pb-3 flex">
-        <div className="w-full min-h-0 rounded-[2.25rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden overflow-x-hidden">
+      <main className="flex-1 lg:min-h-0 max-w-7xl w-full mx-auto px-2.5 sm:px-4 md:px-6 pt-2 sm:pt-3 pb-2 sm:pb-3 flex">
+        <div className="w-full lg:min-h-0 rounded-[2.25rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col overflow-x-hidden lg:overflow-hidden">
 
           {/* Greeting row */}
           <div className="px-3 sm:px-6 md:px-8 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-white/[0.025] rounded-t-[2.25rem]">
@@ -348,7 +348,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           </div>
 
           {/* 3-column body */}
-          <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_13.5rem_minmax(0,1fr)] gap-2 sm:gap-3 p-2 sm:p-3 items-stretch">
+          <div className="flex flex-1 lg:min-h-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_13.5rem_minmax(0,1fr)] gap-2 sm:gap-3 p-2 sm:p-3 items-stretch">
 
         {/* LEFT — Timer */}
         <div className="w-full min-w-0 min-h-0 flex flex-col gap-3">
@@ -607,15 +607,19 @@ export function PomodoroTimer({ username }: { username: string }) {
 
             {/* Task list — simplified, no progress bars */}
             <div className="px-3 py-2.5 space-y-1 flex-1 min-h-0 overflow-y-auto">
-              {displayTasks.length === 0 && !isAddingTask && (
+              {displayTasks.filter(t => !t.isCompleted).length === 0 && !isAddingTask && (
                 <div className="flex flex-col items-center justify-center py-16 text-foreground/30 text-center">
                   <CheckCircle2 className="w-9 h-9 mb-3 text-primary/60" />
-                  <p className="text-sm font-medium text-foreground/55">Nothing here yet</p>
-                  <p className="text-xs text-foreground/35 mt-1">Add one clear task to start the day cleanly.</p>
+                  <p className="text-sm font-medium text-foreground/55">
+                    {displayTasks.length > 0 ? "All done for now" : "Nothing here yet"}
+                  </p>
+                  <p className="text-xs text-foreground/35 mt-1">
+                    {displayTasks.length > 0 ? "Completed tasks are hidden here — check the Tasks page." : "Add one clear task to start the day cleanly."}
+                  </p>
                 </div>
               )}
 
-              {[...displayTasks.filter(t => !t.isCompleted), ...displayTasks.filter(t => t.isCompleted)].map(task => {
+              {displayTasks.filter(t => !t.isCompleted).map(task => {
                 const isSelected = selectedTaskId === task.id
                 const isMenuOpen = openMenuId === task.id
                 const priority = task.priority ?? "medium"
