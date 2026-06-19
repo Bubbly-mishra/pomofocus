@@ -147,7 +147,8 @@ export function PomodoroTimer({ username }: { username: string }) {
   const doneTodayTasks = todayTasks.filter(t => t.isCompleted)
   const dailyGoalMinutes = 50 * 6
   const sessionsDone = Math.min(6, Math.floor(dailyMinutes / 50))
-  const minutesLeftForGoal = Math.max(0, dailyGoalMinutes - dailyMinutes)
+  const plannedCapacityMinutes = 6 * 60
+  const plannedTodayMinutes = todayTasks.reduce((sum, task) => sum + (task.targetMinutes ?? 60), 0)
   const nextTask = selectedTask ?? openTodayTasks[0]
 
   // ── timer ──────────────────────────────────────────────────────────────────
@@ -495,7 +496,8 @@ export function PomodoroTimer({ username }: { username: string }) {
               const doneCount   = doneTodayTasks.length
               const totalCount  = todayTasks.length
               const pct         = Math.min(1, dailyMinutes / dailyGoalMinutes)
-              const over        = dailyMinutes > dailyGoalMinutes
+              const focusGoalComplete = dailyMinutes >= dailyGoalMinutes
+              const plannedOverCapacity = plannedTodayMinutes > plannedCapacityMinutes
               const percentDisp = Math.round(pct * 100)
 
               const ringR = 48, ringStroke = 8, ringCirc = 2 * Math.PI * ringR
@@ -524,26 +526,31 @@ export function PomodoroTimer({ username }: { username: string }) {
                         fill="none" stroke="currentColor" strokeWidth={ringStroke}
                         strokeDasharray={ringCirc} strokeDashoffset={ringOffset2}
                         strokeLinecap="round"
-                        className={["transition-all duration-700", over ? "text-red-400" : "text-primary"].join(" ")}
+                        className={["transition-all duration-700", focusGoalComplete ? "text-emerald-300" : "text-primary"].join(" ")}
                       />
                     </svg>
                     <div className="relative z-10 flex flex-col items-center leading-none">
-                      <span className={["text-xl font-bold", over ? "text-red-300" : "text-foreground"].join(" ")}>{percentDisp}%</span>
-                      <span className="text-[10px] text-foreground/50 mt-1.5">complete</span>
+                      <span className={["text-xl font-bold", focusGoalComplete ? "text-emerald-300" : "text-foreground"].join(" ")}>{percentDisp}%</span>
+                      <span className="text-[10px] text-foreground/50 mt-1.5">6 sessions</span>
                     </div>
                   </div>
 
-                  {/* Remaining planning capacity */}
-                  {over ? (
-                    <div className="bg-red-500/10 rounded-2xl px-2 py-2.5 text-center w-full">
-                      <p className="text-xs font-semibold text-red-300">Daily goal complete</p>
-                    </div>
-                  ) : (
-                    <div className="bg-white/6 rounded-2xl px-2 py-2.5 text-center w-full">
-                      <p className="text-lg font-bold text-foreground leading-tight">{fmtMins(minutesLeftForGoal)}</p>
-                      <p className="text-xs text-foreground/55">of 5h goal left</p>
-                    </div>
-                  )}
+                  {/* Planned capacity */}
+                  <div
+                    className={[
+                      "rounded-2xl px-2 py-2.5 text-center w-full transition-all",
+                      plannedOverCapacity
+                        ? "bg-red-500/12 shadow-[inset_0_0_0_1px_rgba(248,113,113,0.24),0_0_28px_rgba(248,113,113,0.14)]"
+                        : "bg-white/6",
+                    ].join(" ")}
+                  >
+                    <p className={["text-lg font-bold leading-tight", plannedOverCapacity ? "text-red-300" : "text-foreground"].join(" ")}>
+                      {fmtMins(plannedTodayMinutes)} of {fmtMins(plannedCapacityMinutes)}
+                    </p>
+                    <p className={["text-xs", plannedOverCapacity ? "text-red-200/70" : "text-foreground/55"].join(" ")}>
+                      {plannedOverCapacity ? "today is over capacity" : "planned today"}
+                    </p>
+                  </div>
 
                   <div className="grid grid-cols-2 gap-2 w-full">
                     <div className="rounded-2xl bg-white/6 px-2 py-2 text-center">
