@@ -6,7 +6,6 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { AppHeader } from "@/components/app-header"
 import { AppBrand } from "@/components/app-brand"
-import { AppFooter } from "@/components/app-footer"
 import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, MoreVertical, CheckCircle2, Sparkles } from "lucide-react"
 import useSWR from "swr"
 
@@ -312,17 +311,17 @@ export function PomodoroTimer({ username }: { username: string }) {
 
   // ── render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="hills min-h-screen flex flex-col text-foreground">
+    <div className="hills h-screen min-h-0 flex flex-col text-foreground overflow-hidden">
       <audio ref={audioRef} src={ALARM_SOUND_SRC} preload="auto" aria-hidden="true" />
 
       <AppHeader activePage="focus" focusMinutes={dailyMinutes} username={username} />
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-3 flex">
-        <div className="w-full min-h-[calc(100vh-8rem)] rounded-[2.5rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col">
+      <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-3 pb-3 flex">
+        <div className="w-full min-h-0 rounded-[2.25rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden">
 
           {/* Greeting row */}
-          <div className="px-6 sm:px-8 py-4 flex items-center justify-between flex-wrap gap-4 bg-white/[0.025] rounded-t-[2.5rem]">
+          <div className="px-6 sm:px-8 py-3 flex items-center justify-between flex-wrap gap-3 bg-white/[0.025] rounded-t-[2.25rem]">
             <div>
               <h1 className="text-lg sm:text-xl font-bold text-foreground">
                 {(() => {
@@ -353,16 +352,16 @@ export function PomodoroTimer({ username }: { username: string }) {
           </div>
 
           {/* 3-column body */}
-          <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_12rem_minmax(0,1fr)] gap-3 p-3 sm:p-4 items-stretch">
+          <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_12rem_minmax(0,1fr)] gap-3 p-3 items-stretch">
 
         {/* LEFT — Timer */}
-        <div className="w-full min-w-0 flex flex-col gap-3">
+        <div className="w-full min-w-0 min-h-0 flex flex-col gap-3">
 
           {/* Outer rounded container */}
-          <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.18)]">
+          <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1 min-h-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.18)]">
 
           {/* Timer card */}
-          <div className="bg-white/[0.04] rounded-3xl px-6 py-5 flex flex-1 flex-col items-center justify-center text-center relative overflow-hidden">
+          <div className="bg-white/[0.04] rounded-3xl px-6 py-4 flex flex-1 min-h-0 flex-col items-center justify-center text-center relative overflow-hidden">
             <div className="absolute inset-x-10 top-8 h-20 rounded-full bg-primary/10 blur-3xl" />
             <div className="relative mb-3 inline-flex items-center gap-2 rounded-full bg-black/18 px-3 py-1.5 text-xs font-medium text-foreground/60">
               <Sparkles className="w-3.5 h-3.5 text-primary" />
@@ -370,8 +369,8 @@ export function PomodoroTimer({ username }: { username: string }) {
             </div>
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-3" style={{ width: 340, height: 340 }}>
-              <svg width={340} height={340} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
+            <div className="relative flex items-center justify-center mb-2 h-[min(42vh,330px)] w-[min(42vh,330px)]">
+              <svg viewBox="0 0 340 340" className="absolute h-full w-full -rotate-90">
                 <defs>
                   <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
                     <stop offset="0%" stopColor="var(--color-primary)" stopOpacity="0.5" />
@@ -489,8 +488,8 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* MIDDLE — Today's stats */}
-        <div className="w-full min-w-0 flex flex-col">
-          <div className="rounded-3xl bg-white/[0.025] px-3 py-5 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col items-center justify-between gap-4 lg:h-full">
+        <div className="w-full min-w-0 min-h-0 flex flex-col">
+          <div className="rounded-3xl bg-white/[0.025] px-3 py-4 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col items-center justify-between gap-3 lg:h-full min-h-0">
 
             {(() => {
               const doneCount   = doneTodayTasks.length
@@ -569,9 +568,9 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>
 
         {/* RIGHT — Tasks (simplified) */}
-        <div className="w-full min-w-0 flex flex-col gap-2.5">
+        <div className="w-full min-w-0 min-h-0 flex flex-col gap-2.5">
 
-          <div className="rounded-3xl bg-white/[0.025] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col lg:h-full">
+          <div className="rounded-3xl bg-white/[0.025] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col lg:h-full min-h-0">
 
             {/* Panel header */}
             <div className="flex items-center justify-between px-5 pt-4 pb-2 gap-3">
@@ -617,7 +616,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             )}
 
             {/* Task list — simplified, no progress bars */}
-            <div className="px-3 py-2.5 space-y-1 flex-1">
+            <div className="px-3 py-2.5 space-y-1 flex-1 min-h-0 overflow-y-auto">
               {displayTasks.length === 0 && !isAddingTask && (
                 <div className="flex flex-col items-center justify-center py-16 text-foreground/30 text-center">
                   <CheckCircle2 className="w-9 h-9 mb-3 text-primary/60" />
@@ -729,7 +728,6 @@ export function PomodoroTimer({ username }: { username: string }) {
         </div>{/* end unified dashboard card */}
       </main>
 
-      <AppFooter />
     </div>
   )
 }
