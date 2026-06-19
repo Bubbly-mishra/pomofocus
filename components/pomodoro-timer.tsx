@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { AppHeader } from "@/components/app-header"
 import { AppBrand } from "@/components/app-brand"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, MoreVertical, CheckCircle2, Sparkles } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, MoreVertical, CheckCircle2 } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -42,12 +42,6 @@ const MODE_LABEL: Record<TimerMode, string> = {
   pomodoro:   "Deep Work",
   shortBreak: "Short Break",
   longBreak:  "Long Break",
-}
-
-const MODE_HINT: Record<TimerMode, string> = {
-  pomodoro: "Protect this block. One task, no noise.",
-  shortBreak: "Breathe, stretch, reset your eyes.",
-  longBreak: "Step away properly. You earned the space.",
 }
 
 const ALARM_SOUND_SRC = "/sounds/deep-chime.wav"
@@ -363,13 +357,9 @@ export function PomodoroTimer({ username }: { username: string }) {
           {/* Timer card */}
           <div className="bg-white/[0.04] rounded-3xl px-6 py-4 flex flex-1 min-h-0 flex-col items-center justify-center text-center relative overflow-hidden">
             <div className="absolute inset-x-10 top-8 h-20 rounded-full bg-primary/10 blur-3xl" />
-            <div className="relative mb-3 inline-flex items-center gap-2 rounded-full bg-black/18 px-3 py-1.5 text-xs font-medium text-foreground/60">
-              <Sparkles className="w-3.5 h-3.5 text-primary" />
-              {isRunning ? "Session in motion" : "Ready when you are"}
-            </div>
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-2 h-[min(42vh,330px)] w-[min(42vh,330px)]">
+            <div className="relative flex items-center justify-center h-[min(48vh,370px)] w-[min(48vh,370px)]">
               <svg viewBox="0 0 340 340" className="absolute h-full w-full -rotate-90">
                 <defs>
                   <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -452,7 +442,6 @@ export function PomodoroTimer({ username }: { username: string }) {
                 </div>
               </div>
             </div>
-            <p className="relative max-w-sm text-xs text-foreground/45">{MODE_HINT[mode]}</p>
 
           </div>
 
