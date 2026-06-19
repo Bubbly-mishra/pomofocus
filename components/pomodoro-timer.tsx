@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { AppHeader } from "@/components/app-header"
 import { AppBrand } from "@/components/app-brand"
 import { AppFooter } from "@/components/app-footer"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, MoreVertical } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, MoreVertical, CheckCircle2, Sparkles } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -43,6 +43,12 @@ const MODE_LABEL: Record<TimerMode, string> = {
   pomodoro:   "Deep Work",
   shortBreak: "Short Break",
   longBreak:  "Long Break",
+}
+
+const MODE_HINT: Record<TimerMode, string> = {
+  pomodoro: "Protect this block. One task, no noise.",
+  shortBreak: "Breathe, stretch, reset your eyes.",
+  longBreak: "Step away properly. You earned the space.",
 }
 
 const ALARM_SOUND_SRC = "/sounds/deep-chime.wav"
@@ -136,6 +142,13 @@ export function PomodoroTimer({ username }: { username: string }) {
   const totalDuration = DURATIONS[mode]
   const R = 154, STROKE = 6, CIRC = 2 * Math.PI * R
   const ringOffset = CIRC * (timeLeft / totalDuration)
+  const todayTasks = tabTasks("today")
+  const openTodayTasks = todayTasks.filter(t => !t.isCompleted)
+  const doneTodayTasks = todayTasks.filter(t => t.isCompleted)
+  const dailyGoalMinutes = 50 * 6
+  const sessionsDone = Math.min(6, Math.floor(dailyMinutes / 50))
+  const minutesLeftForGoal = Math.max(0, dailyGoalMinutes - dailyMinutes)
+  const nextTask = selectedTask ?? openTodayTasks[0]
 
   // ── timer ──────────────────────────────────────────────────────────────────
   const handleModeChange = useCallback((m: TimerMode) => {
@@ -308,7 +321,7 @@ export function PomodoroTimer({ username }: { username: string }) {
         <div className="w-full min-h-[calc(100vh-8rem)] rounded-[2.5rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col">
 
           {/* Greeting row */}
-          <div className="px-6 sm:px-8 py-3 flex items-center justify-between flex-wrap gap-2 bg-white/[0.025] rounded-t-[2.5rem]">
+          <div className="px-6 sm:px-8 py-4 flex items-center justify-between flex-wrap gap-4 bg-white/[0.025] rounded-t-[2.5rem]">
             <div>
               <h1 className="text-lg sm:text-xl font-bold text-foreground">
                 {(() => {
@@ -317,27 +330,46 @@ export function PomodoroTimer({ username }: { username: string }) {
                   return `${greeting}, ${username[0].toUpperCase()}${username.slice(1)}!`
                 })()} <span className="inline-block">👋</span>
               </h1>
-              <p className="text-foreground/55 text-xs mt-0.5">Let&apos;s make today productive!</p>
+              <p className="text-foreground/55 text-xs mt-0.5">
+                {nextTask ? `Next focus: ${nextTask.title}` : "Plan one meaningful task and start gently."}
+              </p>
             </div>
-            <div className="flex flex-col items-end">
+            <div className="flex items-center gap-2 flex-wrap justify-end">
+              <div className="rounded-2xl bg-primary/10 px-3 py-2 text-right">
+                <p className="text-sm font-bold text-primary">{fmtMins(dailyMinutes)}</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/45">focused</p>
+              </div>
+              <div className="rounded-2xl bg-white/6 px-3 py-2 text-right">
+                <p className="text-sm font-bold text-foreground">{sessionsDone}/6</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/45">sessions</p>
+              </div>
+              <div className="rounded-2xl bg-white/6 px-3 py-2 text-right">
+                <p className="text-sm font-bold text-foreground">{openTodayTasks.length}</p>
+                <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/45">open</p>
+              </div>
               <AppBrand />
             </div>
           </div>
 
           {/* 3-column body */}
-          <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_10rem_minmax(0,1fr)] gap-3 p-3 sm:p-4 items-stretch">
+          <div className="flex flex-1 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_12rem_minmax(0,1fr)] gap-3 p-3 sm:p-4 items-stretch">
 
         {/* LEFT — Timer */}
         <div className="w-full min-w-0 flex flex-col gap-3">
 
           {/* Outer rounded container */}
-          <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+          <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.18)]">
 
           {/* Timer card */}
-          <div className="bg-white/[0.04] rounded-3xl px-6 py-5 flex flex-1 flex-col items-center justify-center text-center relative">
+          <div className="bg-white/[0.04] rounded-3xl px-6 py-5 flex flex-1 flex-col items-center justify-center text-center relative overflow-hidden">
+            <div className="absolute inset-x-10 top-8 h-20 rounded-full bg-primary/10 blur-3xl" />
+            <div className="relative mb-3 inline-flex items-center gap-2 rounded-full bg-black/18 px-3 py-1.5 text-xs font-medium text-foreground/60">
+              <Sparkles className="w-3.5 h-3.5 text-primary" />
+              {isRunning ? "Session in motion" : "Ready when you are"}
+            </div>
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center mb-4" style={{ width: 340, height: 340 }}>
+            <div className="relative flex items-center justify-center mb-3" style={{ width: 340, height: 340 }}>
               <svg width={340} height={340} style={{ position: "absolute", transform: "rotate(-90deg)" }}>
                 <defs>
                   <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -401,7 +433,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                   {/* Circular play / pause button */}
                   <button
                     onClick={toggleTimer}
-                    className="w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg"
+                    className="w-16 h-16 rounded-full flex items-center justify-center transition-all shadow-lg hover:scale-105 active:scale-95"
                     style={{
                       background: "color-mix(in oklab, var(--color-primary) 22%, transparent)",
                     }}
@@ -420,6 +452,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                 </div>
               </div>
             </div>
+            <p className="relative max-w-sm text-xs text-foreground/45">{MODE_HINT[mode]}</p>
 
           </div>
 
@@ -430,11 +463,22 @@ export function PomodoroTimer({ username }: { username: string }) {
               <div className="min-w-0 flex-1">
                 <p className="text-xs text-foreground/40 mb-0.5">Working on</p>
                 <p className="text-sm font-semibold text-primary truncate">{selectedTask.title}</p>
+                <p className="text-[11px] text-foreground/45 mt-1">{fmtMins(selectedTask.remainingMinutes ?? 0)} focused / {fmtMins(selectedTask.targetMinutes ?? 60)} planned</p>
               </div>
               <button onClick={() => setSelectedTaskId(null)} className="text-foreground/30 hover:text-foreground/60 shrink-0 p-1 rounded-lg hover:bg-white/8 transition-colors">
                 <X className="w-4 h-4" />
               </button>
             </div>
+          ) : nextTask ? (
+            <button
+              type="button"
+              onClick={() => setSelectedTaskId(nextTask.id)}
+              className="rounded-2xl bg-primary/8 px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-primary/12 transition-colors"
+            >
+              <p className="text-xs text-foreground/45">Suggested next task</p>
+              <p className="text-sm font-semibold text-primary truncate mt-0.5">{nextTask.title}</p>
+              <p className="text-[11px] text-foreground/45 mt-1">Click to track this during your next session.</p>
+            </button>
           ) : (
             <div className="rounded-2xl bg-primary/8 px-4 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
               <p className="text-xs text-foreground/50">Select a task to start tracking your focus</p>
@@ -448,14 +492,11 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="rounded-3xl bg-white/[0.025] px-3 py-5 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col items-center justify-between gap-4 lg:h-full">
 
             {(() => {
-              const todayList   = tabTasks("today")
-              const doneCount   = todayList.filter(t => t.isCompleted).length
-              const totalCount  = todayList.length
-              const dailyGoalMinutes = 50 * 6
+              const doneCount   = doneTodayTasks.length
+              const totalCount  = todayTasks.length
               const pct         = Math.min(1, dailyMinutes / dailyGoalMinutes)
               const over        = dailyMinutes > dailyGoalMinutes
               const percentDisp = Math.round(pct * 100)
-              const capacityLeft = Math.max(0, dailyGoalMinutes - dailyMinutes)
 
               const ringR = 48, ringStroke = 8, ringCirc = 2 * Math.PI * ringR
               const ringOffset2 = ringCirc * (1 - pct)
@@ -464,12 +505,12 @@ export function PomodoroTimer({ username }: { username: string }) {
                 <>
                   {/* Header */}
                   <div className="text-center">
-                    <h3 className="text-sm font-semibold text-foreground">Today&apos;s Plan</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Today&apos;s Focus</h3>
                     <p className="text-xs font-medium text-emerald-400 mt-0.5">{doneCount}/{totalCount} tasks done</p>
                   </div>
 
                   {/* Focus time */}
-                  <div className="text-center">
+                  <div className="text-center rounded-2xl bg-white/6 px-3 py-3 w-full">
                     <p className="text-xl font-bold text-primary leading-tight">{fmtMins(dailyMinutes)}</p>
                     <p className="text-xs text-foreground/55 mt-0.5">Focus completed</p>
                   </div>
@@ -499,10 +540,21 @@ export function PomodoroTimer({ username }: { username: string }) {
                     </div>
                   ) : (
                     <div className="bg-white/6 rounded-2xl px-2 py-2.5 text-center w-full">
-                      <p className="text-lg font-bold text-foreground leading-tight">{fmtMins(capacityLeft)}</p>
+                      <p className="text-lg font-bold text-foreground leading-tight">{fmtMins(minutesLeftForGoal)}</p>
                       <p className="text-xs text-foreground/55">of 5h goal left</p>
                     </div>
                   )}
+
+                  <div className="grid grid-cols-2 gap-2 w-full">
+                    <div className="rounded-2xl bg-white/6 px-2 py-2 text-center">
+                      <p className="text-base font-bold text-foreground">{sessionsDone}</p>
+                      <p className="text-[10px] text-foreground/45">sessions</p>
+                    </div>
+                    <div className="rounded-2xl bg-white/6 px-2 py-2 text-center">
+                      <p className="text-base font-bold text-foreground">{openTodayTasks.length}</p>
+                      <p className="text-[10px] text-foreground/45">open</p>
+                    </div>
+                  </div>
                 </>
               )
             })()}
@@ -515,8 +567,11 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="rounded-3xl bg-white/[0.025] backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col lg:h-full">
 
             {/* Panel header */}
-            <div className="flex items-center justify-between px-5 pt-4 pb-2">
-              <h2 className="font-semibold text-foreground text-base">Today&apos;s Tasks</h2>
+            <div className="flex items-center justify-between px-5 pt-4 pb-2 gap-3">
+              <div>
+                <h2 className="font-semibold text-foreground text-base">Choose Focus</h2>
+                <p className="text-xs text-foreground/45 mt-0.5">{openTodayTasks.length} open today</p>
+              </div>
               <button
                 onClick={() => router.push("/tasks")}
                 className="text-sm text-primary hover:text-primary/80 transition-colors font-medium"
@@ -557,9 +612,10 @@ export function PomodoroTimer({ username }: { username: string }) {
             {/* Task list — simplified, no progress bars */}
             <div className="px-3 py-2.5 space-y-1 flex-1">
               {displayTasks.length === 0 && !isAddingTask && (
-                <div className="flex flex-col items-center justify-center py-16 text-foreground/20">
-                  <p className="text-4xl mb-2">✓</p>
-                  <p className="text-sm">Nothing here yet</p>
+                <div className="flex flex-col items-center justify-center py-16 text-foreground/30 text-center">
+                  <CheckCircle2 className="w-9 h-9 mb-3 text-primary/60" />
+                  <p className="text-sm font-medium text-foreground/55">Nothing here yet</p>
+                  <p className="text-xs text-foreground/35 mt-1">Add one clear task to start the day cleanly.</p>
                 </div>
               )}
 
@@ -576,7 +632,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                     onClick={() => setSelectedTaskId(isSelected ? null : task.id)}
                     className={[
                       "flex items-center gap-2.5 px-3 py-3 rounded-xl cursor-pointer transition-all relative",
-                      isSelected ? CAT_ACCENT[task.category] : "hover:bg-white/5",
+                      isSelected ? `${CAT_ACCENT[task.category]} bg-white/6` : "hover:bg-white/5",
                       task.isCompleted ? "opacity-40" : "",
                     ].join(" ")}
                   >
@@ -593,6 +649,12 @@ export function PomodoroTimer({ username }: { username: string }) {
                     <span title={task.title} className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/50" : "text-foreground"].join(" ")}>
                       {task.title}
                     </span>
+
+                    {isSelected && (
+                      <span className="hidden xl:inline-flex rounded-full bg-primary/12 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-primary">
+                        Active
+                      </span>
+                    )}
 
                     {/* Time spent / planned */}
                     <span className="text-xs text-foreground/55 shrink-0 tabular-nums">
@@ -643,7 +705,10 @@ export function PomodoroTimer({ username }: { username: string }) {
             </div>
 
             {/* Bottom Add Task bar */}
-            <div className="mt-auto px-5 pt-2 pb-4 flex justify-end">
+            <div className="mt-auto px-5 pt-2 pb-4 flex items-center justify-between gap-3">
+              <p className="text-xs text-foreground/35 hidden sm:block">
+                Tip: pick one task before starting the timer.
+              </p>
               <button
                 onClick={() => { setIsAddingTask(true); setNewTitle(""); setNewHours(1); setNewPriority("medium"); setNewSchedule("today"); setNewCategory("work") }}
                 className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm"
