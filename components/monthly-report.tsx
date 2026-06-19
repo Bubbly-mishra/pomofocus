@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import useSWR from "swr"
 
 interface DayStat {
@@ -26,9 +27,34 @@ const dayLabel = (date: string) => {
   return parsed.toLocaleDateString("en", { weekday: "short", day: "numeric" })
 }
 
-const todayKey = () => new Date().toISOString().split("T")[0]
+const localDateKey = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
+
+const todayKey = () => localDateKey(new Date())
+
+const weekStartKey = (date: string) => {
+  const parsed = new Date(`${date}T00:00:00`)
+  const mondayOffset = (parsed.getDay() + 6) % 7
+  parsed.setDate(parsed.getDate() - mondayOffset)
+  return localDateKey(parsed)
+}
+
+const weekRangeLabel = (week: DayStat[]) => {
+  const first = week[0]?.date
+  const last = week[week.length - 1]?.date
+  if (!first || !last) return ""
+
+  const start = new Date(`${first}T00:00:00`)
+  const end = new Date(`${last}T00:00:00`)
+  return `${start.toLocaleDateString("en", { month: "short", day: "numeric" })} - ${end.toLocaleDateString("en", { month: "short", day: "numeric" })}`
+}
 
 export function MonthlyReport() {
+  const [showFullMonth, setShowFullMonth] = useState(false)
   const { data, isLoading } = useSWR<MonthlyTime>("/api/monthlyTime", fetcher)
   const days = data?.days ?? []
   const today = todayKey()
@@ -36,18 +62,22 @@ export function MonthlyReport() {
   const totalMinutes = days.reduce((sum, day) => sum + day.minutes, 0)
   const workedDays = days.filter(day => day.minutes > 0).length
   const bestDay = days.reduce<DayStat | null>((best, day) => !best || day.minutes > best.minutes ? day : best, null)
-  const weeks = days.reduce<DayStat[][]>((groups, day, index) => {
-    const weekIndex = Math.floor(index / 7)
-    groups[weekIndex] = [...(groups[weekIndex] ?? []), day]
+  const weeks = Array.from(days.reduce<Map<string, DayStat[]>>((groups, day) => {
+    const key = weekStartKey(day.date)
+    groups.set(key, [...(groups.get(key) ?? []), day])
     return groups
-  }, [])
+  }, new Map()).entries()).map(([weekStart, weekDays]) => ({ weekStart, days: weekDays }))
+  const currentWeekStart = weekStartKey(today)
+  const currentWeek = weeks.find(week => week.weekStart === currentWeekStart) ?? weeks[0]
+  const visibleWeeks = showFullMonth ? weeks : currentWeek ? [currentWeek] : []
+  const visibleMinutes = visibleWeeks.reduce((sum, week) => sum + week.days.reduce((weekSum, day) => weekSum + day.minutes, 0), 0)
 
   return (
     <div className="w-full rounded-[2.5rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] overflow-hidden">
       <div className="px-6 sm:px-8 py-5 flex items-center justify-between flex-wrap gap-4 bg-white/[0.025]">
         <div>
           <p className="text-xs uppercase tracking-[0.25em] text-primary/70 font-semibold">Focus Report</p>
-          <h1 className="text-2xl font-bold text-foreground mt-1">{data?.month ?? "This Month"}</h1>
+          <h1 className="text-2xl font-bold text-foreground mt-1">{showFullMonth ? data?.month ?? "This Month" : "Current Week"}</h1>
           <p className="text-sm text-foreground/55 mt-1">
             Today: <span className="text-primary font-semibold">{fmtHours(todayStat?.minutes ?? 0)}</span> tracked against a 5h daily goal.
           </p>
@@ -71,14 +101,38 @@ export function MonthlyReport() {
       <div className="p-5 sm:p-7 space-y-4">
         {isLoading && <div className="rounded-3xl bg-white/[0.025] px-5 py-12 text-center text-foreground/45">Loading report...</div>}
 
-        {!isLoading && weeks.map((week, index) => (
-          <section key={index} className="rounded-3xl bg-white/[0.025] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+        {!isLoading && (
+          <div className="rounded-3xl bg-primary/8 px-5 py-4 flex items-center justify-between gap-4 flex-wrap shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
+            <div>
+              <p className="text-xs uppercase tracking-[0.18em] text-primary/70 font-semibold">
+                {showFullMonth ? "Full month view" : "Showing this week"}
+              </p>
+              <p className="text-sm text-foreground/60 mt-1">
+                {showFullMonth
+                  ? "Expand view is on, so every week in this month is visible."
+                  : "Default view keeps the report focused on the current week."}
+              </p>
+            </div>
+            <div className="text-right">
+              <p className="text-xl font-bold text-primary">{fmtHours(visibleMinutes)}</p>
+              <p className="text-xs text-foreground/45">{showFullMonth ? "visible month total" : "this week total"}</p>
+            </div>
+          </div>
+        )}
+
+        {!isLoading && visibleWeeks.map((week, index) => (
+          <section key={week.weekStart} className="rounded-3xl bg-white/[0.025] px-4 py-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-sm font-semibold text-foreground">Week {index + 1}</h2>
-              <span className="text-xs text-foreground/45">{fmtHours(week.reduce((sum, day) => sum + day.minutes, 0))}</span>
+              <div>
+                <h2 className="text-sm font-semibold text-foreground">
+                  {showFullMonth ? `Week ${weeks.findIndex(item => item.weekStart === week.weekStart) + 1}` : "This Week"}
+                </h2>
+                <p className="text-xs text-foreground/45 mt-0.5">{weekRangeLabel(week.days)}</p>
+              </div>
+              <span className="text-xs text-foreground/45">{fmtHours(week.days.reduce((sum, day) => sum + day.minutes, 0))}</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-3">
-              {week.map(day => {
+              {week.days.map(day => {
                 const dailyGoal = data?.dailyGoalMinutes ?? 300
                 const pct = Math.min(100, Math.round((day.minutes / dailyGoal) * 100))
                 const isToday = day.date === today
@@ -130,6 +184,18 @@ export function MonthlyReport() {
             </div>
           </section>
         ))}
+
+        {!isLoading && weeks.length > 1 && (
+          <div className="flex justify-center pt-1">
+            <button
+              type="button"
+              onClick={() => setShowFullMonth(value => !value)}
+              className="rounded-full bg-primary/12 px-5 py-2.5 text-sm font-semibold text-primary hover:bg-primary/18 transition-all shadow-[0_0_24px_rgba(207,236,245,0.12)]"
+            >
+              {showFullMonth ? "Hide full month" : "Show full month report"}
+            </button>
+          </div>
+        )}
       </div>
     </div>
   )

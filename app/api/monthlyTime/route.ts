@@ -2,7 +2,12 @@ import { NextResponse } from "next/server"
 import { getDb } from "@/lib/mongodb"
 import { getSession } from "@/lib/auth"
 
-const dateKey = (date: Date) => date.toISOString().split("T")[0]
+const dateKey = (date: Date) => {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, "0")
+  const day = String(date.getDate()).padStart(2, "0")
+  return `${year}-${month}-${day}`
+}
 
 export async function GET() {
   const session = await getSession()
