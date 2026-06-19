@@ -545,7 +545,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             )}
 
             {/* Task list — simplified, no progress bars */}
-            <div className="px-3 py-2.5 space-y-1">
+            <div className="px-3 py-2.5 space-y-1 flex-1">
               {displayTasks.length === 0 && !isAddingTask && (
                 <div className="flex flex-col items-center justify-center py-16 text-foreground/20">
                   <p className="text-4xl mb-2">✓</p>
@@ -633,7 +633,7 @@ export function PomodoroTimer({ username }: { username: string }) {
             </div>
 
             {/* Bottom Add Task bar */}
-            <div className="px-5 pt-2 pb-3 flex justify-end">
+            <div className="mt-auto px-5 pt-2 pb-4 flex justify-end">
               <button
                 onClick={() => { setIsAddingTask(true); setNewTitle(""); setNewHours(1); setNewPriority("medium"); setNewSchedule("today"); setNewCategory("work") }}
                 className="flex items-center gap-1.5 bg-primary text-primary-foreground hover:brightness-110 rounded-xl px-4 py-2 text-sm font-semibold transition-all shadow-sm"
