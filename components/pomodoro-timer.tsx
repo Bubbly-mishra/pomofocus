@@ -346,7 +346,7 @@ export function PomodoroTimer({ username }: { username: string }) {
           </div>
 
           {/* 3-column body */}
-          <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_12rem_minmax(0,1fr)] gap-3 p-3 items-stretch">
+          <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_13.5rem_minmax(0,1fr)] gap-3 p-3 items-stretch">
 
         {/* LEFT — Timer */}
         <div className="w-full min-w-0 min-h-0 flex flex-col gap-3">
@@ -462,11 +462,10 @@ export function PomodoroTimer({ username }: { username: string }) {
             <button
               type="button"
               onClick={() => setSelectedTaskId(nextTask.id)}
-              className="rounded-2xl bg-primary/8 px-4 py-3 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.04)] hover:bg-primary/12 transition-colors"
+              className="rounded-2xl bg-white/[0.035] px-4 py-2.5 text-left shadow-[inset_0_1px_0_rgba(255,255,255,0.035)] hover:bg-white/[0.055] transition-colors"
             >
-              <p className="text-xs text-foreground/45">Suggested next task</p>
+              <p className="text-[11px] uppercase tracking-[0.14em] text-foreground/35 font-semibold">Suggested next task</p>
               <p className="text-sm font-semibold text-primary truncate mt-0.5">{nextTask.title}</p>
-              <p className="text-[11px] text-foreground/45 mt-1">Click to track this during your next session.</p>
             </button>
           ) : (
             <div className="rounded-2xl bg-primary/8 px-4 py-3 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]">
@@ -478,7 +477,7 @@ export function PomodoroTimer({ username }: { username: string }) {
 
         {/* MIDDLE — Today's stats */}
         <div className="w-full min-w-0 min-h-0 flex flex-col">
-          <div className="rounded-3xl bg-white/[0.025] px-3 py-4 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col items-center justify-between gap-3 lg:h-full min-h-0">
+          <div className="rounded-3xl bg-white/[0.025] px-3.5 py-4 backdrop-blur-xl shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.26)] flex flex-col items-center justify-between gap-3 lg:h-full min-h-0">
 
             {(() => {
               const doneCount   = doneTodayTasks.length
@@ -528,15 +527,15 @@ export function PomodoroTimer({ username }: { username: string }) {
                     className={[
                       "rounded-2xl px-2 py-2.5 text-center w-full transition-all",
                       plannedOverCapacity
-                        ? "bg-red-500/12 shadow-[inset_0_0_0_1px_rgba(248,113,113,0.24),0_0_28px_rgba(248,113,113,0.14)]"
+                        ? "bg-red-500/8 shadow-[inset_0_0_0_1px_rgba(248,113,113,0.18),0_0_22px_rgba(248,113,113,0.10)]"
                         : "bg-white/6",
                     ].join(" ")}
                   >
-                    <p className={["text-lg font-bold leading-tight", plannedOverCapacity ? "text-red-300" : "text-foreground"].join(" ")}>
+                    <p className={["text-lg font-bold leading-tight", plannedOverCapacity ? "text-red-200" : "text-foreground"].join(" ")}>
                       {fmtMins(plannedTodayMinutes)} of {fmtMins(plannedCapacityMinutes)}
                     </p>
                     <p className={["text-xs", plannedOverCapacity ? "text-red-200/70" : "text-foreground/55"].join(" ")}>
-                      {plannedOverCapacity ? "today is over capacity" : "planned today"}
+                      {plannedOverCapacity ? "planned over capacity" : "planned today"}
                     </p>
                   </div>
 
@@ -627,7 +626,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                     onClick={() => setSelectedTaskId(isSelected ? null : task.id)}
                     className={[
                       "flex items-center gap-2.5 px-3 py-3 rounded-xl cursor-pointer transition-all relative",
-                      isSelected ? `${CAT_ACCENT[task.category]} bg-white/6` : "hover:bg-white/5",
+                      isSelected ? "bg-white/[0.045] shadow-[inset_3px_0_0_rgba(207,236,245,0.45)]" : "hover:bg-white/[0.035]",
                       task.isCompleted ? "opacity-40" : "",
                     ].join(" ")}
                   >
@@ -641,7 +640,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                       onCheckedChange={() => toggleTask(task.id)}
                       className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-foreground/50 shrink-0"
                     />
-                    <span title={task.title} className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/50" : "text-foreground"].join(" ")}>
+                    <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/50" : "text-foreground"].join(" ")}>
                       {task.title}
                     </span>
 
