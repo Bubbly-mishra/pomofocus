@@ -312,7 +312,7 @@ export function PomodoroTimer({ username }: { username: string }) {
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
       <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-2.5 sm:px-4 md:px-6 pt-2 sm:pt-3 pb-2 sm:pb-3 flex">
-        <div className="w-full min-h-0 rounded-[2.25rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden">
+        <div className="w-full min-h-0 rounded-[2.25rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden overflow-x-hidden">
 
           {/* Greeting row */}
           <div className="px-3 sm:px-6 md:px-8 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-white/[0.025] rounded-t-[2.25rem]">
@@ -357,11 +357,11 @@ export function PomodoroTimer({ username }: { username: string }) {
           <div className="rounded-[2rem] bg-white/[0.025] p-2.5 flex flex-col gap-2.5 lg:flex-1 min-h-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_16px_46px_rgba(0,0,0,0.18)]">
 
           {/* Timer card */}
-          <div className="bg-white/[0.04] rounded-3xl px-6 py-4 flex flex-1 min-h-0 flex-col items-center justify-center text-center relative overflow-hidden">
-            <div className="absolute inset-x-10 top-8 h-20 rounded-full bg-primary/10 blur-3xl" />
+          <div className="bg-white/[0.04] rounded-3xl px-3 sm:px-6 py-3 sm:py-4 flex flex-1 min-h-0 flex-col items-center justify-center text-center relative overflow-hidden">
+            <div className="absolute inset-x-4 sm:inset-x-10 top-4 sm:top-8 h-12 sm:h-20 rounded-full bg-primary/10 blur-3xl" />
 
             {/* Ring + clock */}
-            <div className="relative flex items-center justify-center h-[min(48vh,370px)] w-[min(48vh,370px)]">
+            <div className="relative flex items-center justify-center h-[min(35vh,220px)] sm:h-[min(42vh,300px)] md:h-[min(48vh,370px)] w-[min(35vh,220px)] sm:w-[min(42vh,300px)] md:w-[min(48vh,370px)]">
               <svg viewBox="0 0 340 340" className="absolute h-full w-full -rotate-90">
                 <defs>
                   <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -382,7 +382,7 @@ export function PomodoroTimer({ username }: { username: string }) {
 
               <div className="absolute inset-0 grid place-items-center">
                 <div className="flex translate-y-3 flex-col items-center justify-center gap-5">
-                  <span className="block text-center text-7xl leading-none font-bold font-mono tabular-nums tracking-tighter text-foreground">
+                  <span className="block text-center text-4xl sm:text-5xl md:text-6xl lg:text-7xl leading-none font-bold font-mono tabular-nums tracking-tighter text-foreground">
                     {fmtTime(timeLeft)}
                   </span>
 
