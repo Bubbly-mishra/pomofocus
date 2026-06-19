@@ -141,7 +141,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const dailyGoalMinutes = 50 * 6
   const sessionsDone = Math.min(6, Math.floor(dailyMinutes / 50))
   const plannedCapacityMinutes = 6 * 60
-  const plannedTodayMinutes = todayTasks.reduce((sum, task) => sum + (task.targetMinutes ?? 60), 0)
+  const plannedTodayMinutes = openTodayTasks.reduce((sum, task) => sum + (task.targetMinutes ?? 60), 0)
   const nextTask = selectedTask ?? openTodayTasks[0]
 
   // ── timer ──────────────────────────────────────────────────────────────────

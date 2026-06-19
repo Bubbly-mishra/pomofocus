@@ -38,7 +38,7 @@ export function TaskBoard() {
   const displayTasks = tabTasks(activeTab)
   const openTasks = displayTasks.filter(t => !t.isCompleted)
   const doneTasks = displayTasks.filter(t => t.isCompleted)
-  const plannedMinutes = displayTasks.reduce((sum, task) => sum + (task.targetMinutes ?? 60), 0)
+  const plannedMinutes = openTasks.reduce((sum, task) => sum + (task.targetMinutes ?? 60), 0)
 
   const patchTask = useCallback(async (id: string, patch: object) => {
     const opt = tasks.map(t => t.id === id ? { ...t, ...patch } : t)
@@ -152,7 +152,7 @@ export function TaskBoard() {
 
         {/* Daily capacity bar — Today tab only */}
         {activeTab === "today" && (() => {
-          const totalHours = tabTasks("today").reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
+          const totalHours = tabTasks("today").filter(t => !t.isCompleted).reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
           const cap = 6
           const over = totalHours > cap
           const pct = Math.min(1, totalHours / cap)
