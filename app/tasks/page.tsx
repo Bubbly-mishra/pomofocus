@@ -13,7 +13,7 @@ export default async function TasksPage() {
       <AppHeader activePage="tasks" username={session.username} />
 
       {/* Main */}
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-6">
+      <main className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 py-6">
         <TaskBoard />
       </main>
 

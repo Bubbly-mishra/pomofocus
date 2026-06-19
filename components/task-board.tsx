@@ -10,6 +10,12 @@ import {
   PRIORITY_DOT, TAB_LABEL, TAB_ICON, TAB_ACTIVE, CAT_CHIP, CAT_ICON, CAT_ACCENT, fmtMins,
 } from "@/lib/task-constants"
 
+const PRIORITY_LABEL: Record<Priority, string> = {
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+}
+
 export function TaskBoard() {
   const [activeTab,       setActiveTab]       = useState<ActiveTab>("today")
   const [isAddingTask,    setIsAddingTask]    = useState(false)
@@ -29,6 +35,9 @@ export function TaskBoard() {
   }, [tasks])
 
   const displayTasks = tabTasks(activeTab)
+  const openTasks = displayTasks.filter(t => !t.isCompleted)
+  const doneTasks = displayTasks.filter(t => t.isCompleted)
+  const plannedMinutes = displayTasks.reduce((sum, task) => sum + (task.targetMinutes ?? 60), 0)
 
   const patchTask = useCallback(async (id: string, patch: object) => {
     const opt = tasks.map(t => t.id === id ? { ...t, ...patch } : t)
@@ -65,10 +74,35 @@ export function TaskBoard() {
   }
 
   return (
-    <div className="flex flex-col gap-3 w-full">
+    <div className="flex flex-col gap-4 w-full">
+
+      <div className="rounded-[2rem] bg-black/30 backdrop-blur-sm px-5 py-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_18px_52px_rgba(0,0,0,0.28)]">
+        <div className="flex items-center justify-between gap-4 flex-wrap">
+          <div>
+            <p className="text-xs uppercase tracking-[0.24em] text-primary/70 font-semibold">Task Board</p>
+            <h1 className="text-2xl font-bold text-foreground mt-1">Plan the work. Keep it clean.</h1>
+            <p className="text-sm text-foreground/55 mt-1">A calmer view of what needs your focus next.</p>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2 text-center">
+            <div className="rounded-2xl bg-white/6 px-4 py-3">
+              <p className="text-lg font-bold text-primary">{openTasks.length}</p>
+              <p className="text-[11px] text-foreground/50">open</p>
+            </div>
+            <div className="rounded-2xl bg-white/6 px-4 py-3">
+              <p className="text-lg font-bold text-foreground">{doneTasks.length}</p>
+              <p className="text-[11px] text-foreground/50">done</p>
+            </div>
+            <div className="rounded-2xl bg-white/6 px-4 py-3">
+              <p className="text-lg font-bold text-foreground">{fmtMins(plannedMinutes)}</p>
+              <p className="text-[11px] text-foreground/50">planned</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Tab bar */}
-      <div className="flex gap-2 overflow-x-auto pb-1" style={{ scrollbarWidth: "none" }}>
+      <div className="flex gap-2 overflow-x-auto rounded-full bg-black/18 p-1 w-fit max-w-full" style={{ scrollbarWidth: "none" }}>
         {(["today", "work", "study", "personal"] as ActiveTab[]).map(tab => {
           const count    = tabTasks(tab).filter(t => !t.isCompleted).length
           const isActive = activeTab === tab
@@ -77,8 +111,8 @@ export function TaskBoard() {
               key={tab}
               onClick={() => { setActiveTab(tab); setIsAddingTask(false) }}
               className={[
-                "flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all whitespace-nowrap shrink-0",
-                isActive ? TAB_ACTIVE[tab] : "bg-white/6 text-foreground/60 hover:text-foreground/85 hover:bg-white/10",
+                "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold transition-all whitespace-nowrap shrink-0 border border-transparent",
+                isActive ? `${TAB_ACTIVE[tab]} border-primary/15` : "text-foreground/60 hover:text-foreground/85 hover:bg-white/8",
               ].join(" ")}
             >
               {TAB_ICON[tab]}
@@ -94,7 +128,7 @@ export function TaskBoard() {
       </div>
 
       {/* Task panel */}
-      <div className="glass rounded-3xl flex flex-col overflow-hidden">
+      <div className="rounded-[2rem] bg-white/[0.025] backdrop-blur-xl flex flex-col overflow-hidden shadow-[inset_0_1px_0_rgba(255,255,255,0.035),0_18px_52px_rgba(0,0,0,0.26)]">
 
         {/* Panel header */}
         <div className="flex items-center justify-between px-5 py-3 gap-3">
@@ -102,7 +136,7 @@ export function TaskBoard() {
             <h2 className="font-semibold text-foreground text-base">{TAB_LABEL[activeTab]}</h2>
             <p className="text-xs text-foreground/55 mt-0.5">
               {displayTasks.filter(t => !t.isCompleted).length === 0
-                ? (displayTasks.length > 0 ? "All done 🎉" : "No tasks yet")
+                ? (displayTasks.length > 0 ? "All done" : "No tasks yet")
                 : `${displayTasks.filter(t => !t.isCompleted).length} remaining`}
             </p>
           </div>
@@ -188,64 +222,72 @@ export function TaskBoard() {
           {[...displayTasks.filter(t => !t.isCompleted), ...displayTasks.filter(t => t.isCompleted)].map(task => {
             const isConfirm = confirmDeleteId === task.id
             const priority  = task.priority ?? "medium"
-            const target    = task.targetMinutes ?? 60
             const spent     = task.remainingMinutes ?? 0
-            const pct       = Math.min(1, spent / Math.max(1, target))
+            const target    = task.targetMinutes ?? 60
 
             return (
               <div
                 key={task.id}
                 className={[
-                  "flex flex-col gap-2 p-3 rounded-xl transition-all",
-                  "bg-black/18 hover:bg-black/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]",
+                  "flex items-center gap-3 p-3.5 rounded-2xl transition-all",
+                  "bg-black/18 hover:bg-black/28 shadow-[inset_0_1px_0_rgba(255,255,255,0.035)]",
+                  activeTab === "today" ? CAT_ACCENT[task.category] : "",
                   task.isCompleted ? "opacity-40" : "",
                 ].join(" ")}
               >
-                <div className="flex items-center gap-3">
-                  <Checkbox
-                    checked={task.isCompleted}
-                    onCheckedChange={() => toggleTask(task.id)}
-                    className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-foreground/50 shrink-0"
-                  />
-                  <div className={["w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")} />
-                  <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/50" : "text-foreground"].join(" ")}>
+                <Checkbox
+                  checked={task.isCompleted}
+                  onCheckedChange={() => toggleTask(task.id)}
+                  className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-foreground/50 shrink-0"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <span className={["w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")} />
+                    <span className={["text-sm min-w-0 truncate font-semibold", task.isCompleted ? "line-through text-foreground/50" : "text-foreground"].join(" ")}>
                     {task.title}
-                  </span>
-                  <div className="flex items-center gap-1.5 shrink-0">
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex items-center gap-2 flex-wrap">
+                    <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/50">
+                      {fmtMins(spent)} focused / {fmtMins(target)} planned
+                    </span>
+                    <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/50">
+                      {PRIORITY_LABEL[priority]} priority
+                    </span>
                     {activeTab === "today" && (
-                      <span className={["flex items-center gap-1 text-xs px-1.5 py-0.5 rounded-full", CAT_CHIP[task.category]].join(" ")}>
+                      <span className={["flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-full", CAT_CHIP[task.category]].join(" ")}>
                         {CAT_ICON[task.category]}
+                        {TAB_LABEL[task.category]}
                       </span>
-                    )}
-                    <button
-                      title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
-                      onClick={() => toggleSchedule(task.id)}
-                      className={[
-                        "p-1.5 rounded-lg transition",
-                        task.schedule === "today"
-                          ? "text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
-                          : "text-foreground/50 hover:text-foreground/75 hover:bg-white/8",
-                      ].join(" ")}
-                    >
-                      {task.schedule === "today" ? <Sun className="w-3.5 h-3.5" /> : <Clock className="w-3.5 h-3.5" />}
-                    </button>
-                    {isConfirm ? (
-                      <>
-                        <button onClick={() => deleteTask(task.id)} className="text-xs px-2.5 py-1 rounded-lg bg-destructive text-white hover:brightness-110 font-semibold">Yes</button>
-                        <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-2.5 py-1 rounded-lg bg-white/6 text-foreground/50 hover:text-foreground hover:bg-white/10">No</button>
-                      </>
-                    ) : (
-                      <button onClick={() => setConfirmDeleteId(task.id)} className="p-1.5 rounded-lg text-destructive/40 hover:text-destructive hover:bg-destructive/10 transition">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
                     )}
                   </div>
                 </div>
-                <div className="flex items-center gap-2 pl-7">
-                  <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden">
-                    <div className="h-full rounded-full bg-primary/60 transition-all duration-500" style={{ width: `${pct * 100}%` }} />
-                  </div>
-                  <span className="text-xs text-foreground/55 shrink-0 tabular-nums">{fmtMins(spent)} / {fmtMins(target)}</span>
+
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <button
+                    title={task.schedule === "today" ? "Move to Later" : "Move to Today"}
+                    onClick={() => toggleSchedule(task.id)}
+                    className={[
+                      "p-2 rounded-xl transition",
+                      task.schedule === "today"
+                        ? "text-amber-300 bg-amber-400/10 hover:bg-amber-400/20"
+                        : "text-foreground/50 hover:text-foreground/75 hover:bg-white/8",
+                    ].join(" ")}
+                  >
+                    {task.schedule === "today" ? <Sun className="w-4 h-4" /> : <Clock className="w-4 h-4" />}
+                  </button>
+                  {isConfirm ? (
+                    <>
+                      <button onClick={() => deleteTask(task.id)} className="text-xs px-2.5 py-1 rounded-lg bg-destructive text-white hover:brightness-110 font-semibold">Yes</button>
+                      <button onClick={() => setConfirmDeleteId(null)} className="text-xs px-2.5 py-1 rounded-lg bg-white/6 text-foreground/50 hover:text-foreground hover:bg-white/10">No</button>
+                    </>
+                  ) : (
+                    <button onClick={() => setConfirmDeleteId(task.id)} className="p-2 rounded-xl text-destructive/40 hover:text-destructive hover:bg-destructive/10 transition">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             )
