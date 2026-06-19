@@ -234,6 +234,22 @@ export function PomodoroTimer({ username }: { username: string }) {
     }
   }, [openMenuId])
 
+  useEffect(() => {
+    if (!showModeMenu) return
+
+    const closeModeMenu = () => setShowModeMenu(false)
+    const closeModeMenuOnEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") closeModeMenu()
+    }
+
+    document.addEventListener("click", closeModeMenu)
+    document.addEventListener("keydown", closeModeMenuOnEscape)
+    return () => {
+      document.removeEventListener("click", closeModeMenu)
+      document.removeEventListener("keydown", closeModeMenuOnEscape)
+    }
+  }, [showModeMenu])
+
   // ── mutations ──────────────────────────────────────────────────────────────
   const patchTask = useCallback(async (id: string, patch: object) => {
     const opt = tasks.map(t => t.id === id ? { ...t, ...patch } : t)
@@ -275,10 +291,6 @@ export function PomodoroTimer({ username }: { username: string }) {
       <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
 
       <AppHeader activePage="focus" focusMinutes={dailyMinutes} username={username} />
-
-      {showModeMenu && (
-        <div className="fixed inset-0 z-40" onClick={() => { setShowModeMenu(false); setOpenMenuId(null) }} />
-      )}
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-3 flex">
@@ -342,7 +354,10 @@ export function PomodoroTimer({ username }: { username: string }) {
                   {/* Mode dropdown trigger */}
                   <div className="relative">
                     <button
-                      onClick={() => setShowModeMenu(p => !p)}
+                      onClick={event => {
+                        event.stopPropagation()
+                        setShowModeMenu(p => !p)
+                      }}
                       className="flex items-center gap-1.5 text-sm text-foreground/70 hover:text-foreground/90 transition-colors bg-white/8 hover:bg-white/12 rounded-full px-3.5 py-1.5"
                     >
                       {MODE_LABEL[mode]}
@@ -352,7 +367,10 @@ export function PomodoroTimer({ username }: { username: string }) {
                     </button>
 
                     {showModeMenu && (
-                      <div className="absolute top-10 left-1/2 -translate-x-1/2 w-40 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50">
+                      <div
+                        onClick={event => event.stopPropagation()}
+                        className="absolute top-10 left-1/2 -translate-x-1/2 w-40 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50"
+                      >
                         {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
                           <button
                             key={m}
