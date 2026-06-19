@@ -44,7 +44,7 @@ const MODE_LABEL: Record<TimerMode, string> = {
   longBreak:  "Long Break",
 }
 
-const ALARM_SOUND_SRC = "/sounds/deep-chime.wav"
+const ALARM_SOUND_SRC = "/sounds/session-ting.wav"
 
 const PRIORITY_DOT: Record<Priority, string> = {
   high:   "bg-red-400",

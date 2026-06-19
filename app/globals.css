@@ -80,6 +80,9 @@
 @layer base {
   * { @apply border-border outline-ring/50; }
   body { @apply bg-background text-foreground font-sans; }
+  body[data-font-style="serif"] { font-family: Georgia, "Times New Roman", serif; }
+  body[data-font-style="mono"] { font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, monospace; }
+  body[data-font-style="rounded"] { font-family: "Arial Rounded MT Bold", "Nunito", "Trebuchet MS", var(--font-geist-sans), sans-serif; }
 }
 
 @layer utilities {
@@ -90,7 +93,7 @@
     position: fixed;
     inset: 0;
     z-index: -1;
-    background-image: url("/images/hills.jpg");
+    background-image: var(--deepwork-bg-image, url("/images/hills.jpg"));
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
