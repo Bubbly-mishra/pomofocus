@@ -2,10 +2,10 @@
 
 import { useCallback, useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { ListTodo, LogOut, Target } from "lucide-react"
+import { BarChart3, ListTodo, LogOut, Target } from "lucide-react"
 import useSWR from "swr"
 
-type ActivePage = "focus" | "tasks"
+type ActivePage = "focus" | "tasks" | "report"
 
 interface TotalTime {
   minutes: number
@@ -67,6 +67,11 @@ export function AppHeader({ activePage, focusMinutes, username }: { activePage: 
           <button type="button" onClick={() => router.push("/tasks")} className={navItem(activePage === "tasks")}>
             <ListTodo className="w-4 h-4" />
             <span className="hidden sm:block">Tasks</span>
+          </button>
+
+          <button type="button" onClick={() => router.push("/report")} className={navItem(activePage === "report")}>
+            <BarChart3 className="w-4 h-4" />
+            <span className="hidden sm:block">Report</span>
           </button>
 
           <div className="relative">

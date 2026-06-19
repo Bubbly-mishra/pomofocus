@@ -451,12 +451,11 @@ export function PomodoroTimer({ username }: { username: string }) {
               const todayList   = tabTasks("today")
               const doneCount   = todayList.filter(t => t.isCompleted).length
               const totalCount  = todayList.length
-              const totalHours  = todayList.reduce((sum: number, t: Task) => sum + (t.targetMinutes ?? 60) / 60, 0)
-              const cap         = 6
-              const pct         = Math.min(1, totalHours / cap)
-              const over        = totalHours > cap
+              const dailyGoalMinutes = 50 * 6
+              const pct         = Math.min(1, dailyMinutes / dailyGoalMinutes)
+              const over        = dailyMinutes > dailyGoalMinutes
               const percentDisp = Math.round(pct * 100)
-              const capacityLeft = Math.max(0, cap - totalHours)
+              const capacityLeft = Math.max(0, dailyGoalMinutes - dailyMinutes)
 
               const ringR = 48, ringStroke = 8, ringCirc = 2 * Math.PI * ringR
               const ringOffset2 = ringCirc * (1 - pct)
@@ -466,7 +465,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                   {/* Header */}
                   <div className="text-center">
                     <h3 className="text-sm font-semibold text-foreground">Today&apos;s Plan</h3>
-                    <p className="text-xs font-medium text-emerald-400 mt-0.5">{doneCount}/{totalCount} Done</p>
+                    <p className="text-xs font-medium text-emerald-400 mt-0.5">{doneCount}/{totalCount} tasks done</p>
                   </div>
 
                   {/* Focus time */}
@@ -489,19 +488,19 @@ export function PomodoroTimer({ username }: { username: string }) {
                     </svg>
                     <div className="relative z-10 flex flex-col items-center leading-none">
                       <span className={["text-xl font-bold", over ? "text-red-300" : "text-foreground"].join(" ")}>{percentDisp}%</span>
-                      <span className="text-[10px] text-foreground/50 mt-1.5">planned</span>
+                      <span className="text-[10px] text-foreground/50 mt-1.5">complete</span>
                     </div>
                   </div>
 
                   {/* Remaining planning capacity */}
                   {over ? (
                     <div className="bg-red-500/10 rounded-2xl px-2 py-2.5 text-center w-full">
-                      <p className="text-xs font-semibold text-red-300">Over capacity</p>
+                      <p className="text-xs font-semibold text-red-300">Daily goal complete</p>
                     </div>
                   ) : (
                     <div className="bg-white/6 rounded-2xl px-2 py-2.5 text-center w-full">
-                      <p className="text-lg font-bold text-foreground leading-tight">{fmtMins(capacityLeft * 60)}</p>
-                      <p className="text-xs text-foreground/55">of {cap}h capacity left</p>
+                      <p className="text-lg font-bold text-foreground leading-tight">{fmtMins(capacityLeft)}</p>
+                      <p className="text-xs text-foreground/55">of 5h goal left</p>
                     </div>
                   )}
                 </>
