@@ -311,42 +311,44 @@ export function PomodoroTimer({ username }: { username: string }) {
       <AppHeader activePage="focus" focusMinutes={dailyMinutes} username={username} />
 
       {/* Unified dashboard card — greeting + 3-column body, all in one block */}
-      <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-3 pb-3 flex">
+      <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-2.5 sm:px-4 md:px-6 pt-2 sm:pt-3 pb-2 sm:pb-3 flex">
         <div className="w-full min-h-0 rounded-[2.25rem] bg-black/30 backdrop-blur-sm shadow-[inset_0_1px_0_rgba(255,255,255,0.04),0_24px_70px_rgba(0,0,0,0.35)] flex flex-col overflow-hidden">
 
           {/* Greeting row */}
-          <div className="px-6 sm:px-8 py-3 flex items-center justify-between flex-wrap gap-3 bg-white/[0.025] rounded-t-[2.25rem]">
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold text-foreground">
+          <div className="px-3 sm:px-6 md:px-8 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3 bg-white/[0.025] rounded-t-[2.25rem]">
+            <div className="min-w-0">
+              <h1 className="text-base sm:text-lg md:text-xl font-bold text-foreground truncate">
                 {(() => {
                   const h = new Date().getHours()
                   const greeting = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening"
                   return `${greeting}, ${username[0].toUpperCase()}${username.slice(1)}!`
                 })()} <span className="inline-block">👋</span>
               </h1>
-              <p className="text-foreground/55 text-xs mt-0.5">
+              <p className="text-foreground/55 text-xs mt-0.5 truncate">
                 {nextTask ? `Next focus: ${nextTask.title}` : "Plan one meaningful task and start gently."}
               </p>
             </div>
-            <div className="flex items-center gap-2 flex-wrap justify-end">
-              <div className="rounded-2xl bg-primary/10 px-3 py-2 text-right">
+            <div className="flex items-center gap-2 justify-between md:justify-end flex-wrap w-full md:w-auto">
+              <div className="rounded-2xl bg-primary/10 px-2 sm:px-3 py-2 text-center md:text-right">
                 <p className="text-sm font-bold text-primary">{fmtMins(dailyMinutes)}</p>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/45">focused</p>
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.12em] sm:tracking-[0.16em] text-foreground/45 leading-none">focused</p>
               </div>
-              <div className="rounded-2xl bg-white/6 px-3 py-2 text-right">
+              <div className="rounded-2xl bg-white/6 px-2 sm:px-3 py-2 text-center md:text-right">
                 <p className="text-sm font-bold text-foreground">{sessionsDone}/6</p>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/45">sessions</p>
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.12em] sm:tracking-[0.16em] text-foreground/45 leading-none">sessions</p>
               </div>
-              <div className="rounded-2xl bg-white/6 px-3 py-2 text-right">
+              <div className="rounded-2xl bg-white/6 px-2 sm:px-3 py-2 text-center md:text-right">
                 <p className="text-sm font-bold text-foreground">{openTodayTasks.length}</p>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-foreground/45">open</p>
+                <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.12em] sm:tracking-[0.16em] text-foreground/45 leading-none">open</p>
               </div>
-              <AppBrand />
+              <div className="hidden sm:flex md:flex">
+                <AppBrand />
+              </div>
             </div>
           </div>
 
           {/* 3-column body */}
-          <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_13.5rem_minmax(0,1fr)] gap-3 p-3 items-stretch">
+          <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_13.5rem_minmax(0,1fr)] gap-2 sm:gap-3 p-2 sm:p-3 items-stretch">
 
         {/* LEFT — Timer */}
         <div className="w-full min-w-0 min-h-0 flex flex-col gap-3">
