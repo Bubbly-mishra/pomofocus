@@ -45,6 +45,8 @@ const MODE_LABEL: Record<TimerMode, string> = {
   longBreak:  "Long Break",
 }
 
+const ALARM_SOUND_SRC = "/sounds/deep-chime.wav"
+
 const PRIORITY_DOT: Record<Priority, string> = {
   high:   "bg-red-400",
   medium: "bg-yellow-400",
@@ -185,17 +187,26 @@ export function PomodoroTimer({ username }: { username: string }) {
     mutateTotalTime()
   }, [selectedTaskId, tasks, mutate, mutateTotalTime])
 
-  const playAlarm = useCallback(() => {
-    const el = audioRef.current
-    if (!el) return
-    let n = 0
-    const go = () => {
-      el.currentTime = 0; void el.play().catch(() => {})
-      n++; if (n < 3) el.onended = go; else el.onended = null
+  const playAlarm = useCallback((completedMode: TimerMode) => {
+    const source = audioRef.current
+    const playChime = (delay: number) => {
+      window.setTimeout(() => {
+        const el = source ? source.cloneNode(true) as HTMLAudioElement : new Audio(ALARM_SOUND_SRC)
+        el.volume = 0.92
+        el.currentTime = 0
+        void el.play().catch(() => {})
+      }, delay)
     }
-    go()
-    navigator.vibrate?.(200)
-    if (Notification.permission === "granted") new Notification("Session done!", { body: "Take a break" })
+
+    playChime(0)
+    playChime(1400)
+    navigator.vibrate?.([180, 80, 180])
+
+    if (Notification.permission === "granted") {
+      new Notification(`${MODE_LABEL[completedMode]} done!`, {
+        body: completedMode === "pomodoro" ? "Take a mindful break." : "Your break is complete.",
+      })
+    }
   }, [])
 
   useEffect(() => {
@@ -206,7 +217,7 @@ export function PomodoroTimer({ username }: { username: string }) {
       const next   = Math.max(0, Math.ceil(msLeft / 1000))
       setTimeLeft(p => p !== next ? next : p)
       if (msLeft <= 0) {
-        clearInterval(id); endTimeRef.current = null; setIsRunning(false); playAlarm()
+        clearInterval(id); endTimeRef.current = null; setIsRunning(false); playAlarm(mode)
         if (mode === "pomodoro") { void addToRemaining(); handleModeChange("shortBreak") }
         else handleModeChange("pomodoro")
       }
@@ -288,7 +299,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   // ── render ─────────────────────────────────────────────────────────────────
   return (
     <div className="hills min-h-screen flex flex-col text-foreground">
-      <audio ref={audioRef} src="/sounds/alarm.mp3" preload="auto" aria-hidden="true" />
+      <audio ref={audioRef} src={ALARM_SOUND_SRC} preload="auto" aria-hidden="true" />
 
       <AppHeader activePage="focus" focusMinutes={dailyMinutes} username={username} />
 
