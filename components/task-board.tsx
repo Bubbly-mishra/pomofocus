@@ -7,7 +7,7 @@ import { Plus, X, Trash2, Sun, Clock } from "lucide-react"
 import useSWR from "swr"
 import {
   Task, Priority, Category, Schedule, ActiveTab,
-  PRIORITY_DOT, TAB_LABEL, TAB_ICON, TAB_ACTIVE, CAT_CHIP, CAT_ICON, CAT_ACCENT, fmtMins,
+  PRIORITY_DOT, TAB_LABEL, TAB_ICON, TAB_ACTIVE, CAT_CHIP, CAT_ICON, CAT_ACCENT, CAT_TEXT, fmtMins,
 } from "@/lib/task-constants"
 
 const PRIORITY_LABEL: Record<Priority, string> = {
@@ -244,16 +244,16 @@ export function TaskBoard() {
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2 min-w-0">
                     <span className={["w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")} />
-                    <span className="text-sm min-w-0 truncate font-semibold text-foreground">
+                    <span className={["text-sm min-w-0 truncate font-semibold", CAT_TEXT[task.category]].join(" ")}>
                     {task.title}
                     </span>
                   </div>
 
                   <div className="mt-2 flex items-center gap-2 flex-wrap">
-                    <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/50">
+                    <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/40">
                       {fmtMins(spent)} focused / {fmtMins(target)} planned
                     </span>
-                    <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/50">
+                    <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/40">
                       {PRIORITY_LABEL[priority]} priority
                     </span>
                     {activeTab === "today" && (
@@ -327,16 +327,16 @@ export function TaskBoard() {
                         <div className="min-w-0 flex-1">
                           <div className="flex items-center gap-2 min-w-0">
                             <span className={["w-2 h-2 rounded-full shrink-0", PRIORITY_DOT[priority]].join(" ")} />
-                            <span className="text-sm min-w-0 truncate font-semibold line-through text-foreground/50">
+                            <span className={["text-sm min-w-0 truncate font-semibold line-through", CAT_TEXT[task.category]].join(" ")}>
                             {task.title}
                             </span>
                           </div>
 
                           <div className="mt-2 flex items-center gap-2 flex-wrap">
-                            <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/50">
+                            <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/40">
                               {fmtMins(spent)} focused / {fmtMins(target)} planned
                             </span>
-                            <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/50">
+                            <span className="rounded-full bg-white/6 px-2 py-0.5 text-[11px] text-foreground/40">
                               {PRIORITY_LABEL[priority]} priority
                             </span>
                             {activeTab === "today" && (
