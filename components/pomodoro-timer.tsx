@@ -52,6 +52,14 @@ const PRIORITY_DOT: Record<Priority, string> = {
   low:    "bg-green-400",
 }
 
+// Softer/lighter than the Task Board's category color — this list sits on
+// the main dashboard and shouldn't compete visually with the timer.
+const CAT_TEXT_LIGHT: Record<Category, string> = {
+  work:     "text-blue-200/80",
+  study:    "text-purple-200/80",
+  personal: "text-pink-200/80",
+}
+
 const TAB_LABEL: Record<ActiveTab, string> = {
   today: "Today", work: "Work", study: "Study", personal: "Personal",
 }
@@ -646,7 +654,7 @@ export function PomodoroTimer({ username }: { username: string }) {
                       onCheckedChange={() => toggleTask(task.id)}
                       className="data-[state=checked]:bg-primary data-[state=checked]:border-primary border-2 border-foreground/50 shrink-0"
                     />
-                    <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/50" : "text-foreground"].join(" ")}>
+                    <span className={["flex-1 text-sm min-w-0 truncate font-medium", task.isCompleted ? "line-through text-foreground/50" : CAT_TEXT_LIGHT[task.category]].join(" ")}>
                       {task.title}
                     </span>
 
