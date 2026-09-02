@@ -58,6 +58,14 @@ export const CAT_ACCENT: Record<Category, string> = {
   personal: "bg-pink-500/10 shadow-[inset_3px_0_0_rgba(244,114,182,0.65)]",
 }
 
+// Matches CAT_ICON/CAT_CHIP so the task title itself carries the same
+// category color instead of sitting in plain foreground gray.
+export const CAT_TEXT: Record<Category, string> = {
+  work:     "text-blue-300",
+  study:    "text-purple-300",
+  personal: "text-pink-300",
+}
+
 export const fmtMins = (m = 0) => {
   const mm = Math.max(0, Math.round(m))
   const h = Math.floor(mm / 60), r = mm % 60
