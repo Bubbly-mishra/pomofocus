@@ -37,13 +37,13 @@ export const TAB_ACTIVE: Record<ActiveTab, string> = {
   today:    "bg-amber-500/20 text-amber-300 shadow-[0_0_20px_rgba(251,191,36,0.12)]",
   work:     "bg-blue-500/20 text-blue-300 shadow-[0_0_20px_rgba(96,165,250,0.12)]",
   study:    "bg-purple-500/20 text-purple-300 shadow-[0_0_20px_rgba(192,132,252,0.12)]",
-  personal: "bg-pink-500/20 text-pink-300 shadow-[0_0_20px_rgba(244,114,182,0.12)]",
+  personal: "bg-green-500/20 text-green-300 shadow-[0_0_20px_rgba(74,222,128,0.12)]",
 }
 
 export const CAT_CHIP: Record<Category, string> = {
   work:     "bg-blue-500/20 text-blue-300",
   study:    "bg-purple-500/20 text-purple-300",
-  personal: "bg-pink-500/20 text-pink-300",
+  personal: "bg-green-500/20 text-green-300",
 }
 
 export const CAT_ICON: Record<Category, React.ReactNode> = {
@@ -55,7 +55,7 @@ export const CAT_ICON: Record<Category, React.ReactNode> = {
 export const CAT_ACCENT: Record<Category, string> = {
   work:     "bg-blue-500/10 shadow-[inset_3px_0_0_rgba(96,165,250,0.65)]",
   study:    "bg-purple-500/10 shadow-[inset_3px_0_0_rgba(192,132,252,0.65)]",
-  personal: "bg-pink-500/10 shadow-[inset_3px_0_0_rgba(244,114,182,0.65)]",
+  personal: "bg-green-500/10 shadow-[inset_3px_0_0_rgba(74,222,128,0.65)]",
 }
 
 // Matches CAT_ICON/CAT_CHIP so the task title itself carries the same
@@ -63,7 +63,7 @@ export const CAT_ACCENT: Record<Category, string> = {
 export const CAT_TEXT: Record<Category, string> = {
   work:     "text-blue-300",
   study:    "text-purple-300",
-  personal: "text-pink-300",
+  personal: "text-green-300",
 }
 
 export const fmtMins = (m = 0) => {
