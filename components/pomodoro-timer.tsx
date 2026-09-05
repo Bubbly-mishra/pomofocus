@@ -46,6 +46,46 @@ const MODE_LABEL: Record<TimerMode, string> = {
 
 const ALARM_SOUND_SRC = "/sounds/session-ting.wav"
 
+// ── timer persistence ─────────────────────────────────────────────────────
+// The countdown is stored as an absolute end-timestamp (not a tick count) so
+// it survives page refreshes and background tabs without drifting. On load
+// we compare the stored end-time to "now": if it's still ahead, we resume
+// mid-countdown; if it already passed while the page was closed/away, we
+// treat the session as complete right away (sound + mode switch) instead of
+// silently discarding the progress.
+type PersistedTimer = {
+  mode: TimerMode
+  isRunning: boolean
+  endTime: number | null
+  timeLeft: number
+}
+
+const TIMER_STORAGE_KEY = "pomofocus:timer-state"
+
+function loadPersistedTimer(): PersistedTimer | null {
+  if (typeof window === "undefined") return null
+  try {
+    const raw = window.localStorage.getItem(TIMER_STORAGE_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== "object") return null
+    if (!["pomodoro", "shortBreak", "longBreak"].includes(parsed.mode)) return null
+    return parsed as PersistedTimer
+  } catch {
+    return null
+  }
+}
+
+function savePersistedTimer(state: PersistedTimer) {
+  if (typeof window === "undefined") return
+  try {
+    window.localStorage.setItem(TIMER_STORAGE_KEY, JSON.stringify(state))
+  } catch {
+    // Storage can fail (private browsing, quota, etc.) — timer still works
+    // in-memory for the current tab, it just won't survive a refresh.
+  }
+}
+
 const PRIORITY_DOT: Record<Priority, string> = {
   high:   "bg-red-400",
   medium: "bg-yellow-400",
@@ -109,9 +149,27 @@ const fmtMins = (m = 0) => {
 
 export function PomodoroTimer({ username }: { username: string }) {
   const router = useRouter()
-  const [mode,            setMode]            = useState<TimerMode>("pomodoro")
-  const [timeLeft,        setTimeLeft]        = useState(DURATIONS.pomodoro)
-  const [isRunning,       setIsRunning]       = useState(false)
+
+  // Read whatever was persisted (if anything) exactly once, synchronously,
+  // before the first render — this is what lets the countdown pick up where
+  // it left off instead of flashing back to the full duration.
+  const [initialTimer] = useState<PersistedTimer | null>(() => loadPersistedTimer())
+
+  const [mode,            setMode]            = useState<TimerMode>(initialTimer?.mode ?? "pomodoro")
+  const [timeLeft,        setTimeLeft]        = useState<number>(() => {
+    if (!initialTimer) return DURATIONS.pomodoro
+    if (initialTimer.isRunning && initialTimer.endTime) {
+      return Math.max(0, Math.ceil((initialTimer.endTime - Date.now()) / 1000))
+    }
+    return initialTimer.timeLeft
+  })
+  const [isRunning,       setIsRunning]       = useState<boolean>(() => {
+    if (!initialTimer) return false
+    // If the session already finished while we were away, don't render it
+    // as "running" — the catch-up effect below will fire completion instead.
+    if (initialTimer.isRunning && initialTimer.endTime && initialTimer.endTime <= Date.now()) return false
+    return initialTimer.isRunning
+  })
   const [activeTab,       setActiveTab]       = useState<ActiveTab>("today")
   const [selectedTaskId,  setSelectedTaskId]  = useState<string | null>(null)
   const [isAddingTask,    setIsAddingTask]    = useState(false)
@@ -125,7 +183,11 @@ export function PomodoroTimer({ username }: { username: string }) {
   const [showModeMenu,    setShowModeMenu]    = useState(false)
 
   const audioRef   = useRef<HTMLAudioElement | null>(null)
-  const endTimeRef = useRef<number | null>(null)
+  const endTimeRef = useRef<number | null>(
+    initialTimer?.isRunning && initialTimer.endTime && initialTimer.endTime > Date.now()
+      ? initialTimer.endTime
+      : null
+  )
 
   const fetcher = useCallback((url: string) => fetch(url).then(r => r.json()), [])
   const { data: tasks = [], mutate }              = useSWR<Task[]>("/api/tasks", fetcher, { fallbackData: [] })
@@ -161,18 +223,23 @@ export function PomodoroTimer({ username }: { username: string }) {
     setIsRunning(false)
     setMode(m)
     setTimeLeft(nextDuration)
+    savePersistedTimer({ mode: m, isRunning: false, endTime: null, timeLeft: nextDuration })
   }, [])
 
   const toggleTimer = useCallback(() => {
     if (isRunning) {
-      setTimeLeft(Math.ceil(Math.max(0, (endTimeRef.current ?? Date.now()) - Date.now()) / 1000))
+      const remaining = Math.ceil(Math.max(0, (endTimeRef.current ?? Date.now()) - Date.now()) / 1000)
       endTimeRef.current = null
       setIsRunning(false)
+      setTimeLeft(remaining)
+      savePersistedTimer({ mode, isRunning: false, endTime: null, timeLeft: remaining })
     } else {
-      endTimeRef.current = Date.now() + timeLeft * 1000
+      const endTime = Date.now() + timeLeft * 1000
+      endTimeRef.current = endTime
       setIsRunning(true)
+      savePersistedTimer({ mode, isRunning: true, endTime, timeLeft })
     }
-  }, [isRunning, timeLeft])
+  }, [isRunning, timeLeft, mode])
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -235,10 +302,36 @@ export function PomodoroTimer({ username }: { username: string }) {
         clearInterval(id); endTimeRef.current = null; setIsRunning(false); playAlarm(mode)
         if (mode === "pomodoro") { void addToRemaining(); handleModeChange("shortBreak") }
         else handleModeChange("pomodoro")
+      } else {
+        // Keep the persisted end-time fresh so a refresh mid-countdown
+        // resumes from the right place instead of the start.
+        savePersistedTimer({ mode, isRunning: true, endTime: endTimeRef.current, timeLeft: next })
       }
     }, 500)
     return () => clearInterval(id)
   }, [isRunning, mode, playAlarm, addToRemaining, handleModeChange])
+
+  // ── catch-up on load ──────────────────────────────────────────────────────
+  // If the stored end-time had already passed before this page/tab even
+  // mounted (e.g. it was closed, or you were on a different page when the
+  // countdown hit zero), fire the completion sound and mode switch right now
+  // instead of leaving it stuck at zero silently.
+  const didCatchUpRef = useRef(false)
+  useEffect(() => {
+    if (didCatchUpRef.current) return
+    didCatchUpRef.current = true
+    if (initialTimer?.isRunning && initialTimer.endTime && initialTimer.endTime <= Date.now()) {
+      playAlarm(initialTimer.mode)
+      if (initialTimer.mode === "pomodoro") {
+        void addToRemaining()
+        handleModeChange("shortBreak")
+      } else {
+        handleModeChange("pomodoro")
+      }
+    }
+    // Intentionally run once on mount only.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   useEffect(() => {
     document.title = isRunning ? `${fmtTime(timeLeft)} — ${MODE_LABEL[mode]}` : "DeepWork"
