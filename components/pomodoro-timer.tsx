@@ -58,6 +58,7 @@ type PersistedTimer = {
   isRunning: boolean
   endTime: number | null
   timeLeft: number
+  selectedTaskId: string | null
 }
 
 const TIMER_STORAGE_KEY = "pomofocus:timer-state"
@@ -70,7 +71,8 @@ function loadPersistedTimer(): PersistedTimer | null {
     const parsed = JSON.parse(raw)
     if (!parsed || typeof parsed !== "object") return null
     if (!["pomodoro", "shortBreak", "longBreak"].includes(parsed.mode)) return null
-    return parsed as PersistedTimer
+    // Older stored entries (pre-selectedTaskId) won't have this field — default it.
+    return { selectedTaskId: null, ...parsed } as PersistedTimer
   } catch {
     return null
   }
@@ -171,7 +173,7 @@ export function PomodoroTimer({ username }: { username: string }) {
     return initialTimer.isRunning
   })
   const [activeTab,       setActiveTab]       = useState<ActiveTab>("today")
-  const [selectedTaskId,  setSelectedTaskId]  = useState<string | null>(null)
+  const [selectedTaskId,  setSelectedTaskId]  = useState<string | null>(initialTimer?.selectedTaskId ?? null)
   const [isAddingTask,    setIsAddingTask]    = useState(false)
   const [newTitle,        setNewTitle]        = useState("")
   const [newHours,        setNewHours]        = useState(1)
@@ -223,8 +225,8 @@ export function PomodoroTimer({ username }: { username: string }) {
     setIsRunning(false)
     setMode(m)
     setTimeLeft(nextDuration)
-    savePersistedTimer({ mode: m, isRunning: false, endTime: null, timeLeft: nextDuration })
-  }, [])
+    savePersistedTimer({ mode: m, isRunning: false, endTime: null, timeLeft: nextDuration, selectedTaskId })
+  }, [selectedTaskId])
 
   const toggleTimer = useCallback(() => {
     if (isRunning) {
@@ -232,14 +234,14 @@ export function PomodoroTimer({ username }: { username: string }) {
       endTimeRef.current = null
       setIsRunning(false)
       setTimeLeft(remaining)
-      savePersistedTimer({ mode, isRunning: false, endTime: null, timeLeft: remaining })
+      savePersistedTimer({ mode, isRunning: false, endTime: null, timeLeft: remaining, selectedTaskId })
     } else {
       const endTime = Date.now() + timeLeft * 1000
       endTimeRef.current = endTime
       setIsRunning(true)
-      savePersistedTimer({ mode, isRunning: true, endTime, timeLeft })
+      savePersistedTimer({ mode, isRunning: true, endTime, timeLeft, selectedTaskId })
     }
-  }, [isRunning, timeLeft, mode])
+  }, [isRunning, timeLeft, mode, selectedTaskId])
 
   useEffect(() => {
     const h = (e: KeyboardEvent) => {
@@ -252,22 +254,39 @@ export function PomodoroTimer({ username }: { username: string }) {
   }, [toggleTimer])
 
   const addToRemaining = useCallback(async () => {
-    if (!selectedTaskId) return
     const mins = Math.round(DURATIONS.pomodoro / 60)
-    const cur  = tasks.find(t => t.id === selectedTaskId)
-    if (!cur) return
-    const next = (cur.remainingMinutes ?? 0) + mins
-    await mutate(async () => {
-      await fetch(`/api/tasks/${selectedTaskId}`, {
-        method: "PATCH", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ remainingMinutes: next }),
-      })
-      return tasks.map(t => t.id === selectedTaskId ? { ...t, remainingMinutes: next } : t)
-    }, { optimisticData: tasks.map(t => t.id === selectedTaskId ? { ...t, remainingMinutes: next } : t), revalidate: true })
+
+    // Credit the specific task only if one is selected (and still exists).
+    // The daily total below is intentionally NOT gated on this — a
+    // completed pomodoro should always count toward "Focus completed"
+    // even if no task was selected, or if selection got lost across a
+    // refresh.
+    if (selectedTaskId) {
+      const cur = tasks.find(t => t.id === selectedTaskId)
+      if (cur) {
+        const next = (cur.remainingMinutes ?? 0) + mins
+        await mutate(async () => {
+          await fetch(`/api/tasks/${selectedTaskId}`, {
+            method: "PATCH", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ remainingMinutes: next }),
+          })
+          return tasks.map(t => t.id === selectedTaskId ? { ...t, remainingMinutes: next } : t)
+        }, { optimisticData: tasks.map(t => t.id === selectedTaskId ? { ...t, remainingMinutes: next } : t), revalidate: true })
+      }
+    }
+
     await fetch("/api/totalTime", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: mins }) })
     setDailyMinutes(p => p + mins)
     mutateTotalTime()
   }, [selectedTaskId, tasks, mutate, mutateTotalTime])
+
+  // Keep the persisted task selection in sync even when it changes without
+  // a timer start/pause/tick happening right alongside it (e.g. picking a
+  // task while the timer is paused).
+  useEffect(() => {
+    savePersistedTimer({ mode, isRunning, endTime: endTimeRef.current, timeLeft, selectedTaskId })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTaskId])
 
   const playAlarm = useCallback((completedMode: TimerMode) => {
     const source = audioRef.current
@@ -305,11 +324,11 @@ export function PomodoroTimer({ username }: { username: string }) {
       } else {
         // Keep the persisted end-time fresh so a refresh mid-countdown
         // resumes from the right place instead of the start.
-        savePersistedTimer({ mode, isRunning: true, endTime: endTimeRef.current, timeLeft: next })
+        savePersistedTimer({ mode, isRunning: true, endTime: endTimeRef.current, timeLeft: next, selectedTaskId })
       }
     }, 500)
     return () => clearInterval(id)
-  }, [isRunning, mode, playAlarm, addToRemaining, handleModeChange])
+  }, [isRunning, mode, playAlarm, addToRemaining, handleModeChange, selectedTaskId])
 
   // ── catch-up on load ──────────────────────────────────────────────────────
   // If the stored end-time had already passed before this page/tab even
