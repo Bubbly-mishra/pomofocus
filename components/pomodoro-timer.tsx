@@ -6,7 +6,7 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { AppHeader } from "@/components/app-header"
 import { AppBrand } from "@/components/app-brand"
-import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, MoreVertical, CheckCircle2 } from "lucide-react"
+import { Plus, X, Trash2, Briefcase, BookOpen, Heart, Sun, Clock, MoreVertical, CheckCircle2, Pencil } from "lucide-react"
 import useSWR from "swr"
 
 type TimerMode = "pomodoro" | "shortBreak" | "longBreak"
@@ -32,10 +32,43 @@ interface TotalTime {
   minutes: number
 }
 
-const DURATIONS: Record<TimerMode, number> = {
+type Durations = Record<TimerMode, number>
+
+const DEFAULT_DURATIONS: Durations = {
   pomodoro:   50 * 60,
   shortBreak: 10 * 60,
   longBreak:  30 * 60,
+}
+
+const DURATIONS_STORAGE_KEY = "pomofocus:durations"
+const MIN_DURATION_MINUTES = 1
+const MAX_DURATION_MINUTES = 180
+
+function loadPersistedDurations(): Durations {
+  if (typeof window === "undefined") return DEFAULT_DURATIONS
+  try {
+    const raw = window.localStorage.getItem(DURATIONS_STORAGE_KEY)
+    if (!raw) return DEFAULT_DURATIONS
+    const parsed = JSON.parse(raw)
+    if (!parsed || typeof parsed !== "object") return DEFAULT_DURATIONS
+    const clean: Durations = { ...DEFAULT_DURATIONS }
+    for (const m of ["pomodoro", "shortBreak", "longBreak"] as TimerMode[]) {
+      const v = parsed[m]
+      if (typeof v === "number" && Number.isFinite(v) && v > 0) clean[m] = v
+    }
+    return clean
+  } catch {
+    return DEFAULT_DURATIONS
+  }
+}
+
+function savePersistedDurations(durations: Durations) {
+  if (typeof window === "undefined") return
+  try {
+    window.localStorage.setItem(DURATIONS_STORAGE_KEY, JSON.stringify(durations))
+  } catch {
+    // Non-fatal — falls back to defaults next load if storage is unavailable.
+  }
 }
 
 const MODE_LABEL: Record<TimerMode, string> = {
@@ -156,10 +189,11 @@ export function PomodoroTimer({ username }: { username: string }) {
   // before the first render — this is what lets the countdown pick up where
   // it left off instead of flashing back to the full duration.
   const [initialTimer] = useState<PersistedTimer | null>(() => loadPersistedTimer())
+  const [durations,       setDurations]       = useState<Durations>(() => loadPersistedDurations())
 
   const [mode,            setMode]            = useState<TimerMode>(initialTimer?.mode ?? "pomodoro")
   const [timeLeft,        setTimeLeft]        = useState<number>(() => {
-    if (!initialTimer) return DURATIONS.pomodoro
+    if (!initialTimer) return durations.pomodoro
     if (initialTimer.isRunning && initialTimer.endTime) {
       return Math.max(0, Math.ceil((initialTimer.endTime - Date.now()) / 1000))
     }
@@ -183,6 +217,12 @@ export function PomodoroTimer({ username }: { username: string }) {
   const [dailyMinutes,    setDailyMinutes]    = useState(0)
   const [openMenuId,      setOpenMenuId]      = useState<string | null>(null)
   const [showModeMenu,    setShowModeMenu]    = useState(false)
+  const [showDurationEdit, setShowDurationEdit] = useState(false)
+  const [durationDraft,   setDurationDraft]   = useState<Record<TimerMode, string>>({
+    pomodoro:   String(Math.round(durations.pomodoro / 60)),
+    shortBreak: String(Math.round(durations.shortBreak / 60)),
+    longBreak:  String(Math.round(durations.longBreak / 60)),
+  })
 
   const audioRef   = useRef<HTMLAudioElement | null>(null)
   const endTimeRef = useRef<number | null>(
@@ -204,21 +244,22 @@ export function PomodoroTimer({ username }: { username: string }) {
 
   const displayTasks  = tabTasks(activeTab)
   const selectedTask  = tasks.find(t => t.id === selectedTaskId)
-  const totalDuration = DURATIONS[mode]
+  const totalDuration = durations[mode]
   const R = 154, STROKE = 6, CIRC = 2 * Math.PI * R
   const ringOffset = CIRC * (timeLeft / totalDuration)
   const todayTasks = tabTasks("today")
   const openTodayTasks = todayTasks.filter(t => !t.isCompleted)
   const doneTodayTasks = todayTasks.filter(t => t.isCompleted)
-  const dailyGoalMinutes = 50 * 6
-  const sessionsDone = Math.min(6, Math.floor(dailyMinutes / 50))
+  const pomodoroMinutes = Math.round(durations.pomodoro / 60)
+  const dailyGoalMinutes = pomodoroMinutes * 6
+  const sessionsDone = Math.min(6, Math.floor(dailyMinutes / pomodoroMinutes))
   const plannedCapacityMinutes = 6 * 60
   const plannedTodayMinutes = openTodayTasks.reduce((sum, task) => sum + (task.targetMinutes ?? 60), 0)
   const nextTask = selectedTask ?? openTodayTasks[0]
 
   // ── timer ──────────────────────────────────────────────────────────────────
   const handleModeChange = useCallback((m: TimerMode) => {
-    const nextDuration = DURATIONS[m]
+    const nextDuration = durations[m]
 
     setShowModeMenu(false)
     endTimeRef.current = null
@@ -226,7 +267,39 @@ export function PomodoroTimer({ username }: { username: string }) {
     setMode(m)
     setTimeLeft(nextDuration)
     savePersistedTimer({ mode: m, isRunning: false, endTime: null, timeLeft: nextDuration, selectedTaskId })
-  }, [selectedTaskId])
+  }, [selectedTaskId, durations])
+
+  const saveDurations = useCallback(() => {
+    const clampMinutes = (raw: string, fallbackSeconds: number) => {
+      const n = Math.round(Number(raw))
+      if (!Number.isFinite(n) || n <= 0) return fallbackSeconds
+      return Math.min(MAX_DURATION_MINUTES, Math.max(MIN_DURATION_MINUTES, n)) * 60
+    }
+
+    const next: Durations = {
+      pomodoro:   clampMinutes(durationDraft.pomodoro, durations.pomodoro),
+      shortBreak: clampMinutes(durationDraft.shortBreak, durations.shortBreak),
+      longBreak:  clampMinutes(durationDraft.longBreak, durations.longBreak),
+    }
+
+    setDurations(next)
+    savePersistedDurations(next)
+    setDurationDraft({
+      pomodoro:   String(next.pomodoro / 60),
+      shortBreak: String(next.shortBreak / 60),
+      longBreak:  String(next.longBreak / 60),
+    })
+    setShowDurationEdit(false)
+
+    // If the timer for the mode being edited isn't currently running, apply
+    // the new length right away so the display isn't stale. A session
+    // that's already in progress is left alone — the new length takes
+    // effect the next time that mode is started.
+    if (!isRunning) {
+      setTimeLeft(next[mode])
+      savePersistedTimer({ mode, isRunning: false, endTime: null, timeLeft: next[mode], selectedTaskId })
+    }
+  }, [durationDraft, durations, isRunning, mode, selectedTaskId])
 
   const toggleTimer = useCallback(() => {
     if (isRunning) {
@@ -254,7 +327,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   }, [toggleTimer])
 
   const addToRemaining = useCallback(async () => {
-    const mins = Math.round(DURATIONS.pomodoro / 60)
+    const mins = Math.round(durations.pomodoro / 60)
 
     // Credit the specific task only if one is selected (and still exists).
     // The daily total below is intentionally NOT gated on this — a
@@ -278,7 +351,7 @@ export function PomodoroTimer({ username }: { username: string }) {
     await fetch("/api/totalTime", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ minutes: mins }) })
     setDailyMinutes(p => p + mins)
     mutateTotalTime()
-  }, [selectedTaskId, tasks, mutate, mutateTotalTime])
+  }, [selectedTaskId, tasks, mutate, mutateTotalTime, durations])
 
   // Keep the persisted task selection in sync even when it changes without
   // a timer start/pause/tick happening right alongside it (e.g. picking a
@@ -387,6 +460,18 @@ export function PomodoroTimer({ username }: { username: string }) {
       document.removeEventListener("keydown", closeModeMenuOnEscape)
     }
   }, [showModeMenu])
+
+  // Reset to the mode list (not the edit panel) and re-sync the draft
+  // inputs with the actual saved durations each time the menu is opened.
+  useEffect(() => {
+    if (!showModeMenu) return
+    setShowDurationEdit(false)
+    setDurationDraft({
+      pomodoro:   String(Math.round(durations.pomodoro / 60)),
+      shortBreak: String(Math.round(durations.shortBreak / 60)),
+      longBreak:  String(Math.round(durations.longBreak / 60)),
+    })
+  }, [showModeMenu, durations])
 
   // ── mutations ──────────────────────────────────────────────────────────────
   const patchTask = useCallback(async (id: string, patch: object) => {
@@ -524,20 +609,66 @@ export function PomodoroTimer({ username }: { username: string }) {
                     {showModeMenu && (
                       <div
                         onClick={event => event.stopPropagation()}
-                        className="absolute top-10 left-1/2 -translate-x-1/2 w-40 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50"
+                        className="absolute top-10 left-1/2 -translate-x-1/2 w-52 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50"
                       >
-                        {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
-                          <button
-                            key={m}
-                            onClick={() => handleModeChange(m)}
-                            className={[
-                              "px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors",
-                              mode === m ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
-                            ].join(" ")}
-                          >
-                            {MODE_LABEL[m]}
-                          </button>
-                        ))}
+                        {!showDurationEdit ? (
+                          <>
+                            {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
+                              <button
+                                key={m}
+                                onClick={() => handleModeChange(m)}
+                                className={[
+                                  "px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors flex items-center justify-between gap-2",
+                                  mode === m ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
+                                ].join(" ")}
+                              >
+                                <span>{MODE_LABEL[m]}</span>
+                                <span className="text-xs opacity-60 tabular-nums">{Math.round(durations[m] / 60)}m</span>
+                              </button>
+                            ))}
+                            <div className="h-px bg-white/10 my-1" />
+                            <button
+                              onClick={() => setShowDurationEdit(true)}
+                              className="px-3 py-2 rounded-xl text-sm font-medium text-left text-foreground/60 hover:bg-white/6 hover:text-foreground/90 flex items-center gap-2"
+                            >
+                              <Pencil size={13} />
+                              Edit lengths
+                            </button>
+                          </>
+                        ) : (
+                          <div className="flex flex-col gap-2 p-1.5">
+                            {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
+                              <label key={m} className="flex items-center justify-between gap-2 text-xs text-foreground/60">
+                                {MODE_LABEL[m]}
+                                <span className="flex items-center gap-1">
+                                  <input
+                                    type="number"
+                                    min={MIN_DURATION_MINUTES}
+                                    max={MAX_DURATION_MINUTES}
+                                    value={durationDraft[m]}
+                                    onChange={event => setDurationDraft(p => ({ ...p, [m]: event.target.value }))}
+                                    className="w-14 bg-white/8 rounded-lg px-2 py-1 text-right text-foreground text-sm outline-none focus:ring-1 focus:ring-primary/50"
+                                  />
+                                  <span className="opacity-60">min</span>
+                                </span>
+                              </label>
+                            ))}
+                            <div className="flex gap-1.5 mt-1">
+                              <button
+                                onClick={() => setShowDurationEdit(false)}
+                                className="flex-1 px-2 py-1.5 rounded-lg text-xs text-foreground/60 hover:bg-white/6 transition-colors"
+                              >
+                                Cancel
+                              </button>
+                              <button
+                                onClick={saveDurations}
+                                className="flex-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                              >
+                                Save
+                              </button>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
