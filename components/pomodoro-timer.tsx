@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback, useRef } from "react"
+import { createPortal } from "react-dom"
 import { useRouter } from "next/navigation"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
@@ -217,6 +218,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   const [dailyMinutes,    setDailyMinutes]    = useState(0)
   const [openMenuId,      setOpenMenuId]      = useState<string | null>(null)
   const [showModeMenu,    setShowModeMenu]    = useState(false)
+  const [modeMenuPos,     setModeMenuPos]     = useState<{ top: number; left: number } | null>(null)
   const [showDurationEdit, setShowDurationEdit] = useState(false)
   const [durationDraft,   setDurationDraft]   = useState<Record<TimerMode, string>>({
     pomodoro:   String(Math.round(durations.pomodoro / 60)),
@@ -225,6 +227,7 @@ export function PomodoroTimer({ username }: { username: string }) {
   })
 
   const audioRef   = useRef<HTMLAudioElement | null>(null)
+  const modeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const endTimeRef = useRef<number | null>(
     initialTimer?.isRunning && initialTimer.endTime && initialTimer.endTime > Date.now()
       ? initialTimer.endTime
@@ -594,9 +597,17 @@ export function PomodoroTimer({ username }: { username: string }) {
                   {/* Mode dropdown trigger */}
                   <div className="relative">
                     <button
+                      ref={modeTriggerRef}
                       onClick={event => {
                         event.stopPropagation()
-                        setShowModeMenu(p => !p)
+                        setShowModeMenu(p => {
+                          const next = !p
+                          if (next && modeTriggerRef.current) {
+                            const rect = modeTriggerRef.current.getBoundingClientRect()
+                            setModeMenuPos({ top: rect.bottom + 8, left: rect.left + rect.width / 2 })
+                          }
+                          return next
+                        })
                       }}
                       className="flex items-center gap-1.5 text-sm text-foreground/70 hover:text-foreground/90 transition-colors bg-white/8 hover:bg-white/12 rounded-full px-3.5 py-1.5"
                     >
@@ -605,73 +616,79 @@ export function PomodoroTimer({ username }: { username: string }) {
                         <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" />
                       </svg>
                     </button>
-
-                    {showModeMenu && (
-                      <div
-                        onClick={event => event.stopPropagation()}
-                        className="absolute top-10 left-1/2 -translate-x-1/2 w-52 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50"
-                      >
-                        {!showDurationEdit ? (
-                          <>
-                            {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
-                              <button
-                                key={m}
-                                onClick={() => handleModeChange(m)}
-                                className={[
-                                  "px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors flex items-center justify-between gap-2",
-                                  mode === m ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
-                                ].join(" ")}
-                              >
-                                <span>{MODE_LABEL[m]}</span>
-                                <span className="text-xs opacity-60 tabular-nums">{Math.round(durations[m] / 60)}m</span>
-                              </button>
-                            ))}
-                            <div className="h-px bg-white/10 my-1" />
-                            <button
-                              onClick={() => setShowDurationEdit(true)}
-                              className="px-3 py-2 rounded-xl text-sm font-medium text-left text-foreground/60 hover:bg-white/6 hover:text-foreground/90 flex items-center gap-2"
-                            >
-                              <Pencil size={13} />
-                              Edit lengths
-                            </button>
-                          </>
-                        ) : (
-                          <div className="flex flex-col gap-2 p-1.5">
-                            {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
-                              <label key={m} className="flex items-center justify-between gap-2 text-xs text-foreground/60">
-                                {MODE_LABEL[m]}
-                                <span className="flex items-center gap-1">
-                                  <input
-                                    type="number"
-                                    min={MIN_DURATION_MINUTES}
-                                    max={MAX_DURATION_MINUTES}
-                                    value={durationDraft[m]}
-                                    onChange={event => setDurationDraft(p => ({ ...p, [m]: event.target.value }))}
-                                    className="w-14 bg-white/8 rounded-lg px-2 py-1 text-right text-foreground text-sm outline-none focus:ring-1 focus:ring-primary/50"
-                                  />
-                                  <span className="opacity-60">min</span>
-                                </span>
-                              </label>
-                            ))}
-                            <div className="flex gap-1.5 mt-1">
-                              <button
-                                onClick={() => setShowDurationEdit(false)}
-                                className="flex-1 px-2 py-1.5 rounded-lg text-xs text-foreground/60 hover:bg-white/6 transition-colors"
-                              >
-                                Cancel
-                              </button>
-                              <button
-                                onClick={saveDurations}
-                                className="flex-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
-                              >
-                                Save
-                              </button>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
                   </div>
+
+                  {/* Rendered via portal so it isn't clipped by the timer
+                      card's `overflow-hidden` — that ancestor was cutting
+                      off the taller "Edit lengths" panel (and its Save
+                      button) when it was nested inline. */}
+                  {showModeMenu && modeMenuPos && typeof document !== "undefined" && createPortal(
+                    <div
+                      onClick={event => event.stopPropagation()}
+                      style={{ position: "fixed", top: modeMenuPos.top, left: modeMenuPos.left, transform: "translateX(-50%)" }}
+                      className="w-52 glass rounded-2xl p-1.5 flex flex-col gap-0.5 z-50"
+                    >
+                      {!showDurationEdit ? (
+                        <>
+                          {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
+                            <button
+                              key={m}
+                              onClick={() => handleModeChange(m)}
+                              className={[
+                                "px-3 py-2 rounded-xl text-sm font-medium text-left transition-colors flex items-center justify-between gap-2",
+                                mode === m ? "bg-primary/20 text-primary" : "text-foreground/60 hover:bg-white/6 hover:text-foreground/90",
+                              ].join(" ")}
+                            >
+                              <span>{MODE_LABEL[m]}</span>
+                              <span className="text-xs opacity-60 tabular-nums">{Math.round(durations[m] / 60)}m</span>
+                            </button>
+                          ))}
+                          <div className="h-px bg-white/10 my-1" />
+                          <button
+                            onClick={() => setShowDurationEdit(true)}
+                            className="px-3 py-2 rounded-xl text-sm font-medium text-left text-foreground/60 hover:bg-white/6 hover:text-foreground/90 flex items-center gap-2"
+                          >
+                            <Pencil size={13} />
+                            Edit lengths
+                          </button>
+                        </>
+                      ) : (
+                        <div className="flex flex-col gap-2 p-1.5">
+                          {(["pomodoro", "shortBreak", "longBreak"] as TimerMode[]).map(m => (
+                            <label key={m} className="flex items-center justify-between gap-2 text-xs text-foreground/60">
+                              {MODE_LABEL[m]}
+                              <span className="flex items-center gap-1">
+                                <input
+                                  type="number"
+                                  min={MIN_DURATION_MINUTES}
+                                  max={MAX_DURATION_MINUTES}
+                                  value={durationDraft[m]}
+                                  onChange={event => setDurationDraft(p => ({ ...p, [m]: event.target.value }))}
+                                  className="w-14 bg-white/8 rounded-lg px-2 py-1 text-right text-foreground text-sm outline-none focus:ring-1 focus:ring-primary/50"
+                                />
+                                <span className="opacity-60">min</span>
+                              </span>
+                            </label>
+                          ))}
+                          <div className="flex gap-1.5 mt-1">
+                            <button
+                              onClick={() => setShowDurationEdit(false)}
+                              className="flex-1 px-2 py-1.5 rounded-lg text-xs text-foreground/60 hover:bg-white/6 transition-colors"
+                            >
+                              Cancel
+                            </button>
+                            <button
+                              onClick={saveDurations}
+                              className="flex-1 px-2 py-1.5 rounded-lg text-xs font-medium bg-primary/20 text-primary hover:bg-primary/30 transition-colors"
+                            >
+                              Save
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>,
+                    document.body
+                  )}
 
                   {/* Circular play / pause button */}
                   <button
