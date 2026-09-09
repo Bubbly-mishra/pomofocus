@@ -78,7 +78,8 @@ const MODE_LABEL: Record<TimerMode, string> = {
   longBreak:  "Long Break",
 }
 
-const ALARM_SOUND_SRC = "/sounds/session-ting.wav"
+const FOCUS_COMPLETE_SOUND_SRC = "/sounds/doraemon-notification.mp3"
+const BREAK_COMPLETE_SOUND_SRC = "/sounds/session-glass-chime.wav"
 
 // ── timer persistence ─────────────────────────────────────────────────────
 // The countdown is stored as an absolute end-timestamp (not a tick count) so
@@ -226,7 +227,8 @@ export function PomodoroTimer({ username }: { username: string }) {
     longBreak:  String(Math.round(durations.longBreak / 60)),
   })
 
-  const audioRef   = useRef<HTMLAudioElement | null>(null)
+  const audioRef      = useRef<HTMLAudioElement | null>(null)
+  const breakAudioRef = useRef<HTMLAudioElement | null>(null)
   const modeTriggerRef = useRef<HTMLButtonElement | null>(null)
   const endTimeRef = useRef<number | null>(
     initialTimer?.isRunning && initialTimer.endTime && initialTimer.endTime > Date.now()
@@ -365,10 +367,13 @@ export function PomodoroTimer({ username }: { username: string }) {
   }, [selectedTaskId])
 
   const playAlarm = useCallback((completedMode: TimerMode) => {
-    const source = audioRef.current
+    const isBreakDone = completedMode !== "pomodoro"
+    const source = isBreakDone ? breakAudioRef.current : audioRef.current
+    const src    = isBreakDone ? BREAK_COMPLETE_SOUND_SRC : FOCUS_COMPLETE_SOUND_SRC
+
     const playChime = (delay: number) => {
       window.setTimeout(() => {
-        const el = source ? source.cloneNode(true) as HTMLAudioElement : new Audio(ALARM_SOUND_SRC)
+        const el = source ? source.cloneNode(true) as HTMLAudioElement : new Audio(src)
         el.volume = 0.92
         el.currentTime = 0
         void el.play().catch(() => {})
@@ -376,7 +381,10 @@ export function PomodoroTimer({ username }: { username: string }) {
     }
 
     playChime(0)
-    playChime(1400)
+    // The break-complete glass chime is a short two-note ding, so a second
+    // pass 1.4s later reads as a gentle double-chime. The focus-complete
+    // clip already runs a few seconds on its own, so it only plays once.
+    if (isBreakDone) playChime(1400)
     navigator.vibrate?.([180, 80, 180])
 
     if (Notification.permission === "granted") {
@@ -514,7 +522,8 @@ export function PomodoroTimer({ username }: { username: string }) {
   // ── render ─────────────────────────────────────────────────────────────────
   return (
     <div className="hills min-h-screen lg:h-screen lg:min-h-0 flex flex-col text-foreground lg:overflow-hidden">
-      <audio ref={audioRef} src={ALARM_SOUND_SRC} preload="auto" aria-hidden="true" />
+      <audio ref={audioRef} src={FOCUS_COMPLETE_SOUND_SRC} preload="auto" aria-hidden="true" />
+      <audio ref={breakAudioRef} src={BREAK_COMPLETE_SOUND_SRC} preload="auto" aria-hidden="true" />
 
       <AppHeader activePage="focus" focusMinutes={dailyMinutes} username={username} />
 
